@@ -1,0 +1,16 @@
+plugins {
+    id 'java-library'
+}
+
+sourceCompatibility = 1.9
+targetCompatibility = 1.9
+
+repositories {
+	jcenter()
+	maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+	implementation 'com.github.21Joakim:Jockie-Utils:jda-v4-SNAPSHOT'
+	compile group: 'org.mongodb', name: 'mongodb-driver-async', version: '3.8.2'
+}
