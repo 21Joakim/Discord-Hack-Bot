@@ -1,0 +1,246 @@
+:root {
+  --mclr: #2C2F33;
+  --wclr: #FFF;
+}
+
+@font-face {
+  font-family: whitney;
+  font-weight: 300;
+  src: url(https://discordapp.com/assets/6c6374bad0b0b6d204d8d6dc4a18d820.woff) format("woff");
+}
+
+@font-face {
+  font-family: whitney;
+  font-weight: 400;
+  src: url(https://discordapp.com/assets/e8acd7d9bf6207f99350ca9f9e23b168.woff) format("woff");
+}
+
+@font-face {
+  font-family: whitney;
+  font-weight: 500;
+  src: url(https://discordapp.com/assets/3bdef1251a424500c1b3a78dea9b7e57.woff) format("woff");
+}
+
+@font-face {
+  font-family: whitney;
+  font-weight: 600;
+  src: url(https://discordapp.com/assets/be0060dafb7a0e31d2a1ca17c0708636.woff) format("woff");
+}
+
+@font-face {
+  font-family: whitney;
+  font-weight: 700;
+  src: url(https://discordapp.com/assets/8e12fb4f14d9c4592eb8ec9f22337b04.woff) format("woff");
+}
+
+body {
+  margin: 0;
+  background-color: #36393F;
+}
+
+a, 
+a:visited {
+  color: inherit;
+  text-decoration: none;
+}
+
+.btn {
+  padding: 10px 15px;
+  font: 400 15px whitney;
+  line-height: 18px;
+  border-radius: 3px;
+  background-color: #7289DA;
+  color: #FFF;
+  transition: all 200ms ease;
+}
+.btn:hover {
+  background-color: #4e5d94;
+}
+/*------text-styles-------*/
+.twhite {
+  color: var(--wclr)!important;
+}
+.tgrey {
+  color: #72767D!important;
+}
+/*------shit------*/
+.logo,
+.logoText,
+.logoWrapper-main,
+.navListWrapper,
+.profileWrapper,
+.profileHolder .left,
+.profileHolder .right {
+  display: inline-block;
+  vertical-align: middle;
+}
+/*------navigation------*/
+.navWrapper-main {
+  background-color: #202225;
+}
+.navWrapper {
+  display: flex;
+  padding: 4px 20px;
+  align-items: center;
+  max-width: 1300px;
+  margin: auto;
+}
+
+.logoWrapper-main {
+  flex: 0 0 auto;
+  width: 300px;
+}
+.logo {
+  width: 24px;
+  height: auto;
+  margin-right: 8px
+}
+.logoText {
+  text-transform: uppercase;
+  font: 400 16px whitney; 
+  line-height: 20px;
+}
+
+.navListWrapper {
+  flex: 1 1 auto;
+  padding: 0;
+  list-style: none;
+}
+.navListWrapper li {
+  display: inline-block;
+}
+.navListWrapper li a {
+  text-transform: capitalize;
+  padding: 20px;
+  font: 400 16px whitney; 
+  line-height: 20px;
+  color: #B9BBBE;
+}
+.navListWrapper li a.selected {
+  color: var(--wclr);
+}
+.navListWrapper li a:hover {
+  color: #00B0F4;
+}
+
+.profileWrapper {
+  position: relative;
+  text-align: right;
+}
+.profile {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.profileHolder {
+  text-align: left;
+  position: absolute;
+  right: 0;
+  visibility: hidden;
+  background: #18191C;
+  border-radius: 3px;
+  width: max-content;
+  max-width: 220px;
+  padding: 8px 16px;
+  transform: translateY(-10px);
+  opacity: 0;
+  transition: all 200ms ease;
+}
+.profileHolder.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0px);
+}
+.profileHolder .left{
+  color: #B9BBBE;
+  font: 400 12px whitney;
+  line-height: 16px;
+  margin-right: 10px;
+}
+.profileHolder .left span {
+  font: 500 16px whitney;
+  line-height: 20px;
+}
+.profileHolder .right-content {
+  font: 400 15px whitney;
+  line-height: 18px;
+  color: #F04747;
+}
+.profileHolder .right:hover {
+  text-decoration: underline;
+}
+/*------sections------*/
+.sectionWrapper-main {
+  display: flex;
+  flex: 1 1 100%;
+  height: calc(100vh - 60px);
+}
+.sectionWrapper {
+  display: flex;
+  flex: 1 1 1000px;
+}
+.sectionWrapper.left {
+  flex: 1 0 300px;
+  background-color: #2f3136;
+  align-items: flex-end;
+  flex-direction: column;
+}
+
+.sectionContent {
+  padding: 40px 20px;
+  width: 100%;
+  max-width: 980px;
+}
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.sectionTitle, 
+.sectionDescription {
+  text-align: left;
+}
+.sectionTitle {
+  font: 500 20px whitney;
+  line-height: 26px;
+  color: #F6F6F7;
+  margin: 0 0 5px;
+}
+.sectionTitle.big {
+  font: 400 28px whitney;
+  line-height: 34px;
+}
+.sectionDescription {
+  font: 400 16px whitney;
+  line-height: 24px;
+  color: #B9BBBE;
+  margin: 0 0 25px;
+}
+/*------othr------*/
+.serverContent {
+  margin-right: 10px;
+  margin-bottom: 10px;
+  text-align: center;
+  display: inline-block;
+  background-color: #202225;
+  border-radius: 3px;
+  padding: 10px;
+  transition: all 200ms ease;
+}
+.serverContent:hover {
+  box-shadow: inset 0 0 0 2px #7289da, 0 9px 20px rgba(0,0,0,.3);
+}
+.serverImg {
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+  border-radius: 3px;
+  margin-bottom: 5px;
+}
+.serverName {
+  font: 500 16px whitney;
+  line-height: 24px;
+}
