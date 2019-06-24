@@ -356,13 +356,42 @@ public class ModuleBasic {
 		event.reply("**" + member.getUser().getAsTag() + "** has been kicked").queue();
 	}
 	
+	private void banUser(CommandEvent event, User user, String reason) {
+		event.getGuild().retrieveBanList().queue(bans -> {
+			for (Ban ban : bans) {
+				if (ban.getUser().equals(user)) {
+					event.reply("That user is already banned :no_entry:").queue();
+					return;
+				}
+			}
+			
+			event.getGuild().ban(user, 1).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue();
+			event.reply("**" + user.getAsTag() + "** has been banned").queue();
+		});
+	}
+	
 	@Command(value="ban", description="Ban a user from the server")
 	@AuthorPermissions({Permission.BAN_MEMBERS})
 	@BotPermissions({Permission.BAN_MEMBERS})
-	public void ban(CommandEvent event, @Argument(value="member") String memberArgument, @Argument(value="reason", endless=true, nullDefault=true) String reason) {
-		Member member = ArgumentUtility.getMemberByIdOrTag(event.getGuild(), memberArgument, true);
+	public void ban(CommandEvent event, @Argument(value="user") String userArgument, @Argument(value="reason", endless=true, nullDefault=true) String reason) {
+		Member member = ArgumentUtility.getMemberByIdOrTag(event.getGuild(), userArgument, true);
 		if (member == null) {
-			event.reply("I could not find that user :no_entry:").queue();
+			User user = ArgumentUtility.getUserByIdOrTag(event.getShardManager(), userArgument, true);
+			if (user == null) {
+				ArgumentUtility.retrieveUser(event.getShardManager(), userArgument).queue(retrievedUser -> {
+					this.banUser(event, retrievedUser, reason);
+				}, e -> {
+					if (e instanceof ErrorResponseException) {
+						ErrorResponseException exception = (ErrorResponseException) e;
+						if (exception.getErrorResponse().equals(ErrorResponse.UNKNOWN_USER)) {
+							event.reply("I could not find that user :no_entry:").queue();
+						}
+					}
+				});
+			} else {
+				this.banUser(event, user, reason);
+			}
+			
 			return;
 		}
 		
@@ -386,16 +415,20 @@ public class ModuleBasic {
 			return;
 		}
 		
+		this.banUser(event, member.getUser(), reason);
+	}
+	
+	private void unbanUser(CommandEvent event, User user, String reason) {
 		event.getGuild().retrieveBanList().queue(bans -> {
 			for (Ban ban : bans) {
-				if (ban.getUser().equals(member.getUser())) {
-					event.reply("That user is already banned :no_entry:").queue();
+				if (ban.getUser().equals(user)) {
+					event.getGuild().unban(user).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue();
+					event.reply("**" + user.getAsTag() + "** has been unbanned").queue();
 					return;
 				}
 			}
 			
-			event.getGuild().ban(member, 1).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue();
-			event.reply("**" + member.getUser().getAsTag() + "** has been banned").queue();
+			event.reply("That user is not banned :no_entry:").queue();
 		});
 	}
 	
@@ -406,17 +439,7 @@ public class ModuleBasic {
 		User user = ArgumentUtility.getUserByIdOrTag(event.getShardManager(), userArgument, true);
 		if (user == null) {
 			ArgumentUtility.retrieveUser(event.getShardManager(), userArgument).queue(retrievedUser -> {
-				event.getGuild().retrieveBanList().queue(bans -> {
-					for (Ban ban : bans) {
-						if (ban.getUser().equals(retrievedUser)) {
-							event.getGuild().unban(retrievedUser).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue();
-							event.reply("**" + retrievedUser.getAsTag() + "** has been unbanned").queue();
-							return;
-						}
-					}
-					
-					event.reply("That user is not banned :no_entry:").queue();
-				});
+				this.unbanUser(event, retrievedUser, reason);
 			}, e -> {
 				if (e instanceof ErrorResponseException) {
 					ErrorResponseException exception = (ErrorResponseException) e;
@@ -434,17 +457,7 @@ public class ModuleBasic {
 			return;
 		}
 		
-		event.getGuild().retrieveBanList().queue(bans -> {
-			for (Ban ban : bans) {
-				if (ban.getUser().equals(user)) {
-					event.getGuild().unban(user).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue();
-					event.reply("**" + user.getAsTag() + "** has been unbanned").queue();
-					return;
-				}
-			}
-			
-			event.reply("That user is not banned :no_entry:").queue();
-		});
+		this.unbanUser(event, user, reason);
 	}
 	
 	@Command(value="voice kick", aliases={"voicekick", "disconnect", "dc"}, description="Disconnect a user from the voice channel they are currently in")
