@@ -17,10 +17,14 @@ import com.jockie.bot.core.module.Module;
 import com.jockie.bot.core.utility.ArgumentUtility;
 
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Guild.Ban;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Message.Attachment;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.VoiceChannel;
+import net.dv8tion.jda.api.exceptions.ErrorResponseException;
+import net.dv8tion.jda.api.requests.ErrorResponse;
 
 @Module
 public class ModuleBasic {
@@ -338,6 +342,11 @@ public class ModuleBasic {
 			return;
 		}
 		
+		if (!event.getMember().canInteract(member)) {
+			event.reply("You cannot kick a user with a higher top role than yours :no_entry:").queue();
+			return;
+		}
+		
 		if (!event.getSelfMember().canInteract(member)) {
 			event.reply("I cannot kick a user with a higher top role than me :no_entry:").queue();
 			return;
@@ -367,13 +376,75 @@ public class ModuleBasic {
 			return;
 		}
 		
+		if (!event.getMember().canInteract(member)) {
+			event.reply("You cannot ban a user with a higher top role than yours :no_entry:").queue();
+			return;
+		}
+		
 		if (!event.getSelfMember().canInteract(member)) {
 			event.reply("I cannot ban a user with a higher top role than me :no_entry:").queue();
 			return;
 		}
 		
-		event.getGuild().ban(member, 1).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue();
-		event.reply("**" + member.getUser().getAsTag() + "** has been banned").queue();
+		event.getGuild().retrieveBanList().queue(bans -> {
+			for (Ban ban : bans) {
+				if (ban.getUser().equals(member.getUser())) {
+					event.reply("That user is already banned :no_entry:").queue();
+					return;
+				}
+			}
+			
+			event.getGuild().ban(member, 1).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue();
+			event.reply("**" + member.getUser().getAsTag() + "** has been banned").queue();
+		});
+	}
+	
+	@Command(value="unban", description="Unban a user from the server")
+	@AuthorPermissions({Permission.BAN_MEMBERS})
+	@BotPermissions({Permission.BAN_MEMBERS})
+	public void unban(CommandEvent event, @Argument(value="user") String userArgument, @Argument(value="reason", endless=true, nullDefault=true) String reason) {
+		User user = ArgumentUtility.getUserByIdOrTag(event.getShardManager(), userArgument, true);
+		if (user == null) {
+			ArgumentUtility.retrieveUser(event.getShardManager(), userArgument).queue(retrievedUser -> {
+				event.getGuild().retrieveBanList().queue(bans -> {
+					for (Ban ban : bans) {
+						if (ban.getUser().equals(retrievedUser)) {
+							event.getGuild().unban(retrievedUser).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue();
+							event.reply("**" + retrievedUser.getAsTag() + "** has been unbanned").queue();
+							return;
+						}
+					}
+					
+					event.reply("That user is not banned :no_entry:").queue();
+				});
+			}, e -> {
+				if (e instanceof ErrorResponseException) {
+					ErrorResponseException exception = (ErrorResponseException) e;
+					if (exception.getErrorResponse().equals(ErrorResponse.UNKNOWN_USER)) {
+						event.reply("I could not find that user :no_entry:").queue();
+					}
+				}
+			});
+			
+			return;
+		}
+		
+		if (event.getGuild().isMember(user)) {
+			event.reply("That user is not banned :no_entry:").queue();
+			return;
+		}
+		
+		event.getGuild().retrieveBanList().queue(bans -> {
+			for (Ban ban : bans) {
+				if (ban.getUser().equals(user)) {
+					event.getGuild().unban(user).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue();
+					event.reply("**" + user.getAsTag() + "** has been unbanned").queue();
+					return;
+				}
+			}
+			
+			event.reply("That user is not banned :no_entry:").queue();
+		});
 	}
 	
 	@Command(value="voice kick", aliases={"voicekick", "disconnect", "dc"}, description="Disconnect a user from the voice channel they are currently in")
@@ -416,8 +487,13 @@ public class ModuleBasic {
 			return;
 		}
 		
+		if (!event.getMember().canInteract(member)) {
+			event.reply("You cannot rename a user with a higher top role than yours :no_entry:").queue();
+			return;
+		}
+		
 		if (!event.getSelfMember().canInteract(member)) {
-			event.reply("I cannot rename a user with a higher top role than me").queue();
+			event.reply("I cannot rename a user with a higher top role than me :no_entry:").queue();
 			return;
 		}
 		
