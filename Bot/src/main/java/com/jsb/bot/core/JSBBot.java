@@ -9,6 +9,7 @@ import org.json.JSONObject;
 import com.jockie.bot.core.command.impl.CommandListener;
 import com.jockie.bot.core.command.impl.CommandStore;
 import com.jsb.bot.database.Database;
+import com.jsb.bot.paged.PagedManager;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
@@ -30,7 +31,7 @@ public class JSBBot {
 			.setDefaultPrefixes("!");
 		
 		ShardManager shardManager = new DefaultShardManagerBuilder(JSBBot.config.getString("token"))
-			.addEventListeners(listener)
+			.addEventListeners(listener, PagedManager.get())
 			.build();
 		
 		for(JDA shard : shardManager.getShards()) {
@@ -38,7 +39,7 @@ public class JSBBot {
 		}
 		
 		System.out.println(String.format("Started %s with %,d guilds", shardManager.getShards().get(0).getSelfUser().getAsTag(), shardManager.getGuilds().size()));
-		
+
 		Database.get();
 	}
 }
