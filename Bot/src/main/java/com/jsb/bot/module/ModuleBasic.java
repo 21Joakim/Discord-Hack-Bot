@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Message.Attachment;
+import net.dv8tion.jda.api.entities.VoiceChannel;
 
 @Module
 public class ModuleBasic {
@@ -133,7 +134,7 @@ public class ModuleBasic {
 			});
 		}
 		
-		@Command(value="user", description="Prune a set amount of messages from a specified user")
+		@Command(value="user", aliases={"member"}, description="Prune a set amount of messages from a specified user")
 		@AuthorPermissions({Permission.MESSAGE_MANAGE})
 		@BotPermissions({Permission.MESSAGE_MANAGE, Permission.MESSAGE_HISTORY})
 		public void user(CommandEvent event, @Argument(value="member") String memberArgument, @Argument(value="amount", nullDefault=true) Integer amount) {
@@ -316,4 +317,119 @@ public class ModuleBasic {
 		}
 		
 	}
+	
+	@Command(value="kick", description="Kick a user from the server")
+	@AuthorPermissions({Permission.KICK_MEMBERS})
+	@BotPermissions({Permission.KICK_MEMBERS})
+	public void kick(CommandEvent event, @Argument(value="member") String memberArgument, @Argument(value="reason", endless=true, nullDefault=true) String reason) {
+		Member member = ArgumentUtility.getMemberByIdOrTag(event.getGuild(), memberArgument, true);
+		if (member == null) {
+			event.reply("I could not find that user :no_entry:").queue();
+			return;
+		}
+		
+		if (member.equals(event.getMember())) {
+			event.reply("You cannot kick youself :no_entry:").queue();
+			return;
+		}
+		
+		if (member.equals(event.getSelfMember())) {
+			event.reply("I cannot kick myself :no_entry:").queue();
+			return;
+		}
+		
+		if (!event.getSelfMember().canInteract(member)) {
+			event.reply("I cannot kick a user with a higher top role than me :no_entry:").queue();
+			return;
+		}
+		
+		event.getGuild().kick(member).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue();
+		event.reply("**" + member.getUser().getAsTag() + "** has been kicked").queue();
+	}
+	
+	@Command(value="ban", description="Ban a user from the server")
+	@AuthorPermissions({Permission.BAN_MEMBERS})
+	@BotPermissions({Permission.BAN_MEMBERS})
+	public void ban(CommandEvent event, @Argument(value="member") String memberArgument, @Argument(value="reason", endless=true, nullDefault=true) String reason) {
+		Member member = ArgumentUtility.getMemberByIdOrTag(event.getGuild(), memberArgument, true);
+		if (member == null) {
+			event.reply("I could not find that user :no_entry:").queue();
+			return;
+		}
+		
+		if (member.equals(event.getMember())) {
+			event.reply("You cannot ban youself :no_entry:").queue();
+			return;
+		}
+		
+		if (member.equals(event.getSelfMember())) {
+			event.reply("I cannot ban myself :no_entry:").queue();
+			return;
+		}
+		
+		if (!event.getSelfMember().canInteract(member)) {
+			event.reply("I cannot ban a user with a higher top role than me :no_entry:").queue();
+			return;
+		}
+		
+		event.getGuild().ban(member, 1).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue();
+		event.reply("**" + member.getUser().getAsTag() + "** has been banned").queue();
+	}
+	
+	@Command(value="voice kick", aliases={"voicekick", "disconnect", "dc"}, description="Disconnect a user from the voice channel they are currently in")
+	@AuthorPermissions({Permission.VOICE_MOVE_OTHERS})
+	@BotPermissions({Permission.VOICE_MOVE_OTHERS})
+	public void voiceKick(CommandEvent event, @Argument(value="member") String memberArgument, @Argument(value="reason", endless=true, nullDefault=true) String reason) {
+		Member member = ArgumentUtility.getMemberByIdOrTag(event.getGuild(), memberArgument, true);
+		if (member == null) {
+			event.reply("I could not find that user :no_entry:").queue();
+			return;
+		}
+		
+		if (member.equals(event.getMember())) {
+			event.reply("You cannot disconnect yourself :no_entry:").queue();
+			return;
+		}
+		
+		VoiceChannel channel = member.getVoiceState().getChannel();
+		if (channel == null) {
+			event.reply("That user is not in a voice channel :no_entry:").queue();
+			return;
+		}
+		
+		event.getGuild().moveVoiceMember(member, null).queue();
+		event.reply("**" + member.getUser().getAsTag() + "** has been disconnected from " + channel.getName()).queue();
+	}
+	
+	@Command(value="rename", aliases={"nick", "nickname", "set nick", "setnick", "set nickname", "setnickname"}, description="Set a users nickname")
+	@AuthorPermissions({Permission.NICKNAME_CHANGE})
+	@BotPermissions({Permission.NICKNAME_MANAGE})
+	public void rename(CommandEvent event, @Argument(value="member") String memberArgument, @Argument(value="nickname", endless=true, nullDefault=true) String nickname) {
+		Member member = ArgumentUtility.getMemberByIdOrTag(event.getGuild(), memberArgument, true);
+		if (member == null) {
+			event.reply("I could not find that user :no_entry:").queue();
+			return;
+		}
+		
+		if (nickname.length() > 32) {
+			event.reply("Nicknames cannot be any longer than 32 characters :no_entry:").queue();
+			return;
+		}
+		
+		if (!event.getSelfMember().canInteract(member)) {
+			event.reply("I cannot rename a user with a higher top role than me").queue();
+			return;
+		}
+		
+		if (!member.equals(event.getMember())) {
+			if (!member.hasPermission(Permission.NICKNAME_MANAGE)) {
+				event.reply("You need the Manage Nicknames permission to rename someone else :no_entry:").queue();
+				return;
+			}
+		}
+		
+		event.getGuild().modifyNickname(member, nickname).queue();
+		event.reply("Renamed **" + member.getUser().getAsTag() + "** to `" + nickname + "`").queue();
+	}
+	
 }
