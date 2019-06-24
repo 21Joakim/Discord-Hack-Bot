@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import com.jockie.bot.core.command.impl.CommandEvent;
 import com.jsb.bot.paged.event.SelectEvent;
 import com.jsb.bot.paged.event.UpdateEvent;
 import com.jsb.bot.paged.event.UpdateEvent.UpdateType;
@@ -322,5 +323,13 @@ public class PagedResult<Type> {
 	
 	public EmbedBuilder getEmbed() {
 		return this.embed;
+	}
+	
+	public void send(CommandEvent event) {
+		this.send(event.getMessage());
+	}
+	
+	public void send(Message message) {
+		PagedManager.get().send(message, this);
 	}
 }
