@@ -2,14 +2,21 @@ package com.jsb.bot.logger;
 
 import java.awt.Color;
 import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.bson.Document;
 
 import com.jsb.bot.embed.WebhookEmbedBuilder;
 
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.audit.ActionType;
+import net.dv8tion.jda.api.audit.AuditLogEntry;
+import net.dv8tion.jda.api.audit.AuditLogKey;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRoleAddEvent;
@@ -74,7 +81,7 @@ public class LoggerListener extends ListenerAdapter {
 	}
 	
 	/* TODO: Add support for multiple roles */
-	/* TODO: Add who it was removed by */
+	@SuppressWarnings("unchecked")
 	public void onGuildMemberRoleAdd(GuildMemberRoleAddEvent event) {
 		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MEMBER_ROLE_ADD);
 		if(logger == null) {
@@ -84,17 +91,43 @@ public class LoggerListener extends ListenerAdapter {
 		this.delay(() -> {
 			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
 			embed.setDescription(String.format("The role %s was added to `%s`", event.getRoles().get(0).getAsMention(), event.getMember().getEffectiveName()));
-			embed.setAuthor(event.getMember().getEffectiveName(), event.getUser().getEffectiveAvatarUrl());
+			embed.setAuthor(event.getUser().getAsTag(), event.getUser().getEffectiveAvatarUrl());
 			embed.setTimestamp(ZonedDateTime.now());
 			embed.setFooter(String.format("Role ID: %s", event.getRoles().get(0).getId()));
 			embed.setColor(LoggerListener.COLOR_GREEN);
 			
-			LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_ROLE_ADD, embed.build());
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs()
+					.type(ActionType.MEMBER_ROLE_UPDATE)
+					.user(event.getUser().getIdLong()).queue(logs -> {
+						AuditLogEntry entry = logs.stream()
+							.filter(e -> {
+								List<String> roleIds = ((List<Map<String, String>>) e.getChangeByKey(AuditLogKey.MEMBER_ROLES_ADD).getNewValue())
+									.stream()
+									.map(role -> role.get("id"))
+									.collect(Collectors.toList());
+								
+								return event.getRoles().stream()
+									.map(role -> role.getId())
+									.allMatch(id -> roleIds.contains(id));
+							})
+							.findFirst()
+							.orElse(null);
+						
+						if(entry != null) {
+							embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+						}
+						
+						LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_ROLE_ADD, embed.build());
+					});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_ROLE_ADD, embed.build());
+			}
 		});
 	}
 	
 	/* TODO: Add support for multiple roles */
-	/* TODO: Add who it was removed by */
+	@SuppressWarnings("unchecked")
 	public void onGuildMemberRoleRemove(GuildMemberRoleRemoveEvent event) {
 		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MEMBER_ROLE_REMOVE);
 		if(logger == null) {
@@ -103,13 +136,39 @@ public class LoggerListener extends ListenerAdapter {
 		
 		this.delay(() -> {
 			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
-			embed.setDescription(String.format("The role %s was removed from `%s`", event.getRoles().get(0).getAsMention()));
-			embed.setAuthor(event.getMember().getEffectiveName(), event.getUser().getEffectiveAvatarUrl());
+			embed.setDescription(String.format("The role %s was removed from `%s`", event.getRoles().get(0).getAsMention(), event.getMember().getEffectiveName()));
+			embed.setAuthor(event.getUser().getAsTag(), event.getUser().getEffectiveAvatarUrl());
 			embed.setTimestamp(ZonedDateTime.now());
 			embed.setFooter(String.format("Role ID: %s", event.getRoles().get(0).getId()));
 			embed.setColor(LoggerListener.COLOR_RED);
 			
-			LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_ROLE_REMOVE, embed.build());	
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs()
+					.type(ActionType.MEMBER_ROLE_UPDATE)
+					.user(event.getUser().getIdLong()).queue(logs -> {
+						AuditLogEntry entry = logs.stream()
+							.filter(e -> {
+								List<String> roleIds = ((List<Map<String, String>>) e.getChangeByKey(AuditLogKey.MEMBER_ROLES_REMOVE).getNewValue())
+									.stream()
+									.map(role -> role.get("id"))
+									.collect(Collectors.toList());
+								
+								return event.getRoles().stream()
+									.map(role -> role.getId())
+									.allMatch(id -> roleIds.contains(id));
+							})
+							.findFirst()
+							.orElse(null);
+						
+						if(entry != null) {
+							embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+						}
+						
+						LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_ROLE_REMOVE, embed.build());
+					});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_ROLE_REMOVE, embed.build());
+			}
 		});
 	}
 }
