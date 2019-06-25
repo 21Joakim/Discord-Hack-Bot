@@ -38,20 +38,18 @@ import okhttp3.OkHttpClient;
 class LoggerClient {
 	
 	private static final int MAX_RETRIES = 3;
-
-	private static final int TIME_BEFORE_REFETCH = 1000;
 	
 	public static class Request {
 		
 		public final JDA jda;
 		public final long guildId;
 		
-		public final String type;
+		public final LoggerType type;
 		public final List<WebhookEmbed> embeds;
 		
 		public final Instant created;
 		
-		public Request(JDA jda, long guildId, String type, List<WebhookEmbed> embeds, Instant created) {
+		public Request(JDA jda, long guildId, LoggerType type, List<WebhookEmbed> embeds, Instant created) {
 			this.jda = jda;
 			this.guildId = guildId;
 			this.type = type;
@@ -82,11 +80,11 @@ class LoggerClient {
 	private OkHttpClient webhookClient = new OkHttpClient();
 	private ScheduledExecutorService webhookScheduler = Executors.newSingleThreadScheduledExecutor();
 	
-	public Document getLogger(Guild guild, String type) {
+	public Document getLogger(Guild guild, LoggerType type) {
 		return this.getLogger(guild, type, null);
 	}
 
-	public Document getLogger(Guild guild, String type, Predicate<Document> predicate) {
+	public Document getLogger(Guild guild, LoggerType type, Predicate<Document> predicate) {
 		Document document = Database.get().getGuildById(guild.getIdLong(), null, Projections.include("logger.loggers"));
 		List<Document> loggers = document.getEmbedded(List.of("logger", "loggers"), Collections.emptyList());
 		for(Document logger : loggers) {
@@ -101,14 +99,14 @@ class LoggerClient {
 			Document enabledEvent = Database.EMPTY_DOCUMENT;
 			
 			for(Document event : enabledEvents) {
-				if(event.getString("type").equals(type)) {
+				if(event.getString("type").equalsIgnoreCase(type.toString())) {
 					enabled = false;
 					enabledEvent = event;
 				}
 			}
 			
 			for(Document event : disabledEvents) {
-				if(event.getString("type").equals(type)) {
+				if(event.getString("type").equalsIgnoreCase(type.toString())) {
 					enabled = false;
 				}
 			}
@@ -203,7 +201,7 @@ class LoggerClient {
 		}
 	}
 
-	public void queue(Guild guild, String type, WebhookEmbed... embeds) {
+	public void queue(Guild guild, LoggerType type, WebhookEmbed... embeds) {
 		this.queue(new Request(guild.getJDA(), guild.getIdLong(), type, Arrays.asList(embeds), Clock.systemUTC().instant()));
 	}
 }

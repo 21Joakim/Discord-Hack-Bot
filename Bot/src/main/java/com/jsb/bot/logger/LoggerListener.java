@@ -8,22 +8,20 @@ import java.util.concurrent.TimeUnit;
 
 import org.bson.Document;
 
-import club.minnced.discord.webhook.send.WebhookEmbed.EmbedAuthor;
-import club.minnced.discord.webhook.send.WebhookEmbed.EmbedField;
-import club.minnced.discord.webhook.send.WebhookEmbed.EmbedFooter;
-import club.minnced.discord.webhook.send.WebhookEmbedBuilder;
-import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.audit.ActionType;
-import net.dv8tion.jda.api.audit.AuditLogEntry;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.GuildChannel;
-import net.dv8tion.jda.api.events.channel.text.TextChannelCreateEvent;
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
+import com.jsb.bot.embed.WebhookEmbedBuilder;
+
+import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRoleAddEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRoleRemoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 public class LoggerListener extends ListenerAdapter {
 	
 	private static final int LOG_DELAY = 500;
+	
+	private static final Color COLOR_GREEN = Color.GREEN;
+	private static final Color COLOR_RED = Color.RED;
 	
 	/* 
 	 * Used to delay all logs so we can get the correct action as well as the correct audit logs,
@@ -33,54 +31,85 @@ public class LoggerListener extends ListenerAdapter {
 	 */
 	private ScheduledExecutorService delayer = Executors.newSingleThreadScheduledExecutor();
 	
-	public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
-		Document logger = LoggerClient.get().getLogger(event.getGuild(), "GUILD_MESSAGE_SENT");
-		if(logger != null) {
-			this.delayer.schedule(() -> {
-				WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
-				embed.setDescription(String.format("A message was sent by **%s**", event.getAuthor().getAsTag()));
-				embed.setColor(Color.GREEN.getRGB());
-				embed.setTimestamp(ZonedDateTime.now());
-				embed.setAuthor(new EmbedAuthor(event.getMember().getEffectiveName(), event.getAuthor().getEffectiveAvatarUrl(), null));
-				embed.setFooter(new EmbedFooter(String.format("User ID: %s", event.getAuthor().getId()), null));
-				embed.addField(new EmbedField(true, "Content", event.getMessage().getContentRaw()));
-				
-				LoggerClient.get().queue(event.getGuild(), "GUILD_MESSAGE_SENT", embed.build());
-			}, LoggerListener.LOG_DELAY, TimeUnit.MILLISECONDS);
-		}
-	}	
-	
-	public void onChannelCreate(Guild guild, GuildChannel channel, String type) {
-		Document logger = LoggerClient.get().getLogger(guild, type);
-		if(logger != null) {
-			this.delayer.schedule(() -> {
-				WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
-				embed.setDescription(String.format("A channel by the name of %s has been created", channel.getName()));
-				embed.setColor(Color.GREEN.getRGB());
-				embed.setTimestamp(ZonedDateTime.now());
-				embed.setAuthor(new EmbedAuthor(guild.getName(), guild.getIconUrl(), null));
-				embed.setFooter(new EmbedFooter(String.format("Channel ID: %s", channel.getId()), null));
-				
-				if(guild.getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
-					guild.retrieveAuditLogs().type(ActionType.CHANNEL_CREATE).queue(logs -> {
-						AuditLogEntry entry = logs.stream()
-							.filter(e -> e.getTargetIdLong() == channel.getIdLong())
-							.findFirst().orElse(null);
-						
-						if(entry != null) {
-							embed.setDescription(String.format("A channel by the name of %s has been created by **%s**", channel.getName(), entry.getUser().getAsTag()));
-						}
-						
-						LoggerClient.get().queue(guild, type, embed.build());
-					});
-				}else{
-					LoggerClient.get().queue(guild, type, embed.build());
-				}
-			}, LoggerListener.LOG_DELAY, TimeUnit.MILLISECONDS);
-		}
+	private void delay(Runnable runnable) {
+		this.delayer.schedule(runnable, LoggerListener.LOG_DELAY, TimeUnit.MILLISECONDS);
 	}
 	
-	public void onTextChannelCreate(TextChannelCreateEvent event) {
-		onChannelCreate(event.getGuild(), event.getChannel(), "TEXT_CHANNEL_CREATE");
+	public void onGuildMemberJoin(GuildMemberJoinEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MEMBER_JOIN);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("`%s` just joined the server", event.getMember().getEffectiveName()));
+			embed.setAuthor(event.getUser().getAsTag(), event.getUser().getEffectiveAvatarUrl());
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setFooter(String.format("User ID: %s", event.getUser().getId()));
+			embed.setColor(LoggerListener.COLOR_GREEN);
+			
+			LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_JOIN, embed.build());
+		});
+	}
+	
+	/* TODO: Check for kick */
+	/* TODO: Make stayed for use more than just days */
+	public void onGuildMemberLeave(GuildMemberLeaveEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MEMBER_LEAVE);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("**%s** left the server", event.getUser().getAsTag()));
+			embed.setAuthor(event.getUser().getAsTag(), event.getUser().getEffectiveAvatarUrl());
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setFooter(String.format("User ID: %s", event.getUser().getId()));
+			embed.setColor(LoggerListener.COLOR_RED);
+			
+			LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_LEAVE, embed.build());
+		});
+	}
+	
+	/* TODO: Add support for multiple roles */
+	/* TODO: Add who it was removed by */
+	public void onGuildMemberRoleAdd(GuildMemberRoleAddEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MEMBER_ROLE_ADD);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The role %s was added to `%s`", event.getRoles().get(0).getAsMention(), event.getMember().getEffectiveName()));
+			embed.setAuthor(event.getMember().getEffectiveName(), event.getUser().getEffectiveAvatarUrl());
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setFooter(String.format("Role ID: %s", event.getRoles().get(0).getId()));
+			embed.setColor(LoggerListener.COLOR_GREEN);
+			
+			LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_ROLE_ADD, embed.build());
+		});
+	}
+	
+	/* TODO: Add support for multiple roles */
+	/* TODO: Add who it was removed by */
+	public void onGuildMemberRoleRemove(GuildMemberRoleRemoveEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MEMBER_ROLE_REMOVE);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The role %s was removed from `%s`", event.getRoles().get(0).getAsMention()));
+			embed.setAuthor(event.getMember().getEffectiveName(), event.getUser().getEffectiveAvatarUrl());
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setFooter(String.format("Role ID: %s", event.getRoles().get(0).getId()));
+			embed.setColor(LoggerListener.COLOR_RED);
+			
+			LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_ROLE_REMOVE, embed.build());	
+		});
 	}
 }
