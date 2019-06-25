@@ -1,5 +1,8 @@
 package com.jsb.bot.paged;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -42,9 +45,19 @@ public class PagedResult<Type> {
 	private Message message;
 	
 	public PagedResult(List<? extends Type> entries) {
-		this.entries = entries;
+		this.entries = new ArrayList<>(entries);
 		
 		this.pages = this.getPages();
+	}
+	
+	public PagedResult(Collection<? extends Type> entries) {
+		this.entries = new ArrayList<>(entries);
+		
+		this.pages = this.getPages();
+	}
+	
+	public <T extends Type> PagedResult(T[] entries) {
+		this(List.of(entries));
 	}
 	
 	public PagedResult(List<? extends Type> entries, Function<? super Type, String> displayFunction, Consumer<SelectEvent<Type>> onSelect) {
@@ -236,6 +249,10 @@ public class PagedResult<Type> {
 	
 	public int getEntriesPerPage() {
 		return this.entriesPerPage;
+	}
+	
+	public List<Type> getEntries() {
+		return Collections.unmodifiableList(this.entries);
 	}
 	
 	public long getTimeoutTime() {

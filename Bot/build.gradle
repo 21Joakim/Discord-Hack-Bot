@@ -12,5 +12,5 @@ repositories {
 
 dependencies {
 	implementation 'com.github.21Joakim:Jockie-Utils:jda-v4-SNAPSHOT'
-	compile group: 'org.mongodb', name: 'mongodb-driver-async', version: '3.8.2'
+	implementation 'org.mongodb:mongodb-driver-sync:3.10.2'
 }

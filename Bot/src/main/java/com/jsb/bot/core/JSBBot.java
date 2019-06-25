@@ -24,6 +24,9 @@ public class JSBBot {
 			JSBBot.config = new JSONObject(new String(stream.readAllBytes(), StandardCharsets.UTF_8));
 		}
 		
+		/* Connect to the database */
+		Database.get();
+		
 		CommandListener listener = new CommandListener()
 			.addCommandStore(CommandStore.of("com.jsb.bot.command"))
 			.addCommandStore(CommandStore.of("com.jsb.bot.module"))
@@ -39,7 +42,5 @@ public class JSBBot {
 		}
 		
 		System.out.println(String.format("Started %s with %,d guilds", shardManager.getShards().get(0).getSelfUser().getAsTag(), shardManager.getGuilds().size()));
-
-		Database.get();
 	}
 }
