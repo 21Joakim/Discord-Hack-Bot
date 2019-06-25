@@ -84,12 +84,22 @@ public class CommandModlog extends CommandImpl {
 	}
 	
 	public enum ModlogAction {
-		BAN,
-		KICK,
-		MUTE,
-		WARN,
-		VOICE_KICK,
-		RENAME;
+		BAN("Ban"),
+		UNBAN("Unban"),
+		KICK("Kick"),
+		MUTE("Mute"),
+		WARN("Warm"),
+		VOICE_KICK("Voice Kick");
+		
+		private String name;
+		
+		private ModlogAction(String name) {
+			this.name = name;
+		}
+		
+		public String getName() {
+			return this.name;
+		}
 	}
 	
 	@Command(value="toggle action", aliases={"toggleaction"}, description="Enable/disable whether an action should be logged or not")

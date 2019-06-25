@@ -16,6 +16,8 @@ import com.jockie.bot.core.command.Command.BotPermissions;
 import com.jockie.bot.core.command.impl.CommandEvent;
 import com.jockie.bot.core.command.impl.CommandImpl;
 import com.jockie.bot.core.module.Module;
+import com.jsb.bot.command.CommandModlog.ModlogAction;
+import com.jsb.bot.listener.ModlogListener;
 import com.jsb.bot.utility.ArgumentUtility;
 
 import net.dv8tion.jda.api.Permission;
@@ -359,6 +361,7 @@ public class ModuleBasic {
 		
 		event.getGuild().kick(member).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue($ -> {
 			event.reply("**" + member.getUser().getAsTag() + "** has been kicked").queue();
+			ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, ModlogAction.KICK);
 		});
 	}
 	
@@ -373,6 +376,7 @@ public class ModuleBasic {
 			
 			event.getGuild().ban(user, 1).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue($ -> {
 				event.reply("**" + user.getAsTag() + "** has been banned").queue();
+				ModlogListener.createModlog(event.getGuild(), event.getAuthor(), user, reason, false, ModlogAction.BAN);
 			});
 		});
 	}
@@ -435,7 +439,9 @@ public class ModuleBasic {
 				if (ban.getUser().equals(user)) {
 					event.getGuild().unban(user).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue($ -> {
 						event.reply("**" + user.getAsTag() + "** has been unbanned").queue();
+						ModlogListener.createModlog(event.getGuild(), event.getAuthor(), user, reason, false, ModlogAction.UNBAN);
 					});
+					
 					return;
 				}
 			}
@@ -499,6 +505,7 @@ public class ModuleBasic {
 		
 		event.getGuild().moveVoiceMember(member, null).queue($ -> {
 			event.reply("**" + member.getUser().getAsTag() + "** has been disconnected from " + channel.getName()).queue();
+			ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, ModlogAction.VOICE_KICK);
 		});
 	}
 	

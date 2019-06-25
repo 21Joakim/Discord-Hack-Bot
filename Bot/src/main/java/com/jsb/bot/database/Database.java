@@ -13,11 +13,13 @@ import com.jsb.bot.database.callback.Callback;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.UpdateResult;
 
@@ -37,6 +39,7 @@ public class Database {
 	private MongoDatabase database;
 	
 	private MongoCollection<Document> guilds;
+	private MongoCollection<Document> modlogCases;
 	
 	private Database() {
 		JSONObject mongodb = JSBBot.config.getJSONObject("mongodb");
@@ -58,6 +61,8 @@ public class Database {
 		this.database = this.client.getDatabase(mongodb.getString("database"));
 		
 		this.guilds = this.database.getCollection("guilds");
+		this.modlogCases = this.database.getCollection("modlogCases");
+		this.modlogCases.createIndex(Indexes.ascending("guildId"));
 		
 		System.out.println("Connecting to MongoDB...");
 		
@@ -71,6 +76,24 @@ public class Database {
 	}
 	
 	private UpdateOptions defaultUpdateOptions = new UpdateOptions().upsert(true);
+	
+	public MongoCollection<Document> getModlogCases() {
+		return this.modlogCases;
+	}
+	
+	public long getModlogCasesAmountFromGuild(long guildId) {
+		return this.modlogCases.countDocuments(Filters.eq("guildId", guildId));
+	}
+	
+	public FindIterable<Document> getModlogCasesFromGuild(long guildId) {
+		return this.modlogCases.find(Filters.eq("guildId", guildId));
+	}
+	
+	public void insertModlogCase(Document document) {
+		this.queryExecutor.submit(() -> {
+			this.modlogCases.insertOne(document);
+		});
+	}
 	
 	public MongoCollection<Document> getGuilds() {
 		return this.guilds;
