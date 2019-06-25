@@ -9,6 +9,9 @@
 <body>
   <header class="navWrapper-main">
     <div class="navWrapper">
+      <div class="navBurger" id="nav" onclick="showNav()">
+        <span></span>
+      </div>
       <div class="logoWrapper-main">
         <a class="logoWrapper" href="/">
           <img class="logo" src="https://discordapp.com/assets/5c5bb53489a0a9f602df0a24c5981523.svg">
@@ -16,13 +19,13 @@
         </a>
       </div>
       <ul class="navListWrapper">
-        <li><a class="selected" href="#">servers</a></li>
+        <li class="selected"><a href="#">servers</a></li>
         <li><a href="#1">something</a></li>
         <li><a href="#2">something2</a></li>
       </ul>
       <div class="profileWrapper">
         <img class="profile" src="https://cdn.discordapp.com/avatars/142322376808333312/41673b14bf83c1e7c0e9043a29fd6c2c.png" onclick="showProfileHolder(this)">
-        <div class="profileHolder">
+        <div class="profileHolder" id="profile">
           <div class="left">Logged in as<br><span class="twhite">Username<span class="tgrey">#0000</span></span></div>
           <div class="right">
             <a href="#gtfo" class="right-content">Log Out</a>
@@ -32,16 +35,18 @@
     </div>
   </header>
   <section class="sectionWrapper-main">
-    <div class="sectionWrapper left">
+    <div class="sectionWrapper left" id="sectionNav">
       <div class="sectionContent" style="max-width:290px;padding-right:10px;">
         <h1 class="sectionTitle big">Welcome!</h1>
         <p class="sectionDescription">This dashboard will be your portal to configuring the servers the bot is in. Click on the "Add a server" button to invite the bot to your server.</p>
       </div>
+      <img class="sectionImg" src="assets/hack_wump.png">
     </div>
+    <div id="overlay" onclick="showNav()"></div>
     <div class="sectionWrapper">
       <div class="sectionContent">
         <div class="sectionHeader">
-          <h2 class="sectionTitle twhite" style="text-transform:uppercase">my servers</h2>
+          <h2 class="sectionTitle twhite" style="text-transform:uppercase;margin-left: 10px;">my servers</h2>
           <a class="btn" href="#">Add a server</a>
         </div>
         <a class="serverContent" href="#">
@@ -59,15 +64,33 @@
       </div>
     </div>
   </section>
-
   <script>
-    function showProfileHolder(x) {
-      let __profile = x.parentElement.children[1];
-      if(!__profile.classList.contains("show")) {
-        __profile.classList.add("show");
-      }else{
+    let __sidenav = document.getElementById("sectionNav");
+    let __newnav = document.getElementsByClassName("navListWrapper")[0].cloneNode(true);
+    __newnav.classList.add("mobile")
+    
+    if(__sidenav.firstChild.classList == undefined) {
+      __sidenav.insertBefore(__newnav, __sidenav.firstChild);
+    }
+
+    document.onclick = function(e) {
+      let __profile = document.getElementById("profile");
+      if(e.target.closest(".profile")) {
+        return;
+      } 
+      if(e.target.classList != __profile.classList) {
         __profile.classList.remove("show");
       }
+    }
+
+    function showNav() {
+      document.getElementById("nav").classList.toggle("show");
+      document.getElementById("sectionNav").classList.toggle("show");
+      document.getElementById("overlay").classList.toggle("show");
+    }
+
+    function showProfileHolder(x) {
+      x.parentElement.children[1].classList.toggle("show");
     }
   </script>
 </body>
