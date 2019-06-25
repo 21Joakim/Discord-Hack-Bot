@@ -28,9 +28,9 @@ public class ArgumentUtility {
 			Matcher idMatch = idRegex.matcher(argument);
 			Matcher mentionMatch = MentionType.CHANNEL.getPattern().matcher(argument);
 			if (idMatch.matches()) {
-				guild.getTextChannelById(idMatch.group(1));
+				return guild.getTextChannelById(idMatch.group(1));
 			} else if (mentionMatch.matches()) {
-				guild.getTextChannelById(mentionMatch.group(1));
+				return guild.getTextChannelById(mentionMatch.group(1));
 			} else {
 				List<TextChannel> textChannels = guild.getTextChannelsByName(argument, true);
 				if (!textChannels.isEmpty()) {
@@ -47,9 +47,9 @@ public class ArgumentUtility {
 			Matcher idMatch = idRegex.matcher(argument);
 			Matcher mentionMatch = MentionType.ROLE.getPattern().matcher(argument);
 			if (idMatch.matches()) {
-				guild.getRoleById(idMatch.group(1));
+				return guild.getRoleById(idMatch.group(1));
 			} else if (mentionMatch.matches()) {
-				guild.getRoleById(mentionMatch.group(1));
+				return guild.getRoleById(mentionMatch.group(1));
 			} else {
 				List<Role> roles = guild.getRolesByName(argument, true);
 				if (!roles.isEmpty()) {
@@ -67,9 +67,9 @@ public class ArgumentUtility {
 			Matcher mentionMatch = MentionType.USER.getPattern().matcher(argument);
 			Matcher tagMatch = tagRegex.matcher(argument);
 			if (idMatch.matches()) {
-				guild.getMemberById(idMatch.group(1));
+				return guild.getMemberById(idMatch.group(1));
 			} else if (mentionMatch.matches()) {
-				guild.getMemberById(mentionMatch.group(1));
+				return guild.getMemberById(mentionMatch.group(1));
 			} else if (tagMatch.matches()) {
 				String name = tagMatch.group(1).toLowerCase();
 				String discriminator = tagMatch.group(2);
@@ -100,9 +100,9 @@ public class ArgumentUtility {
 			Matcher mentionMatch = MentionType.USER.getPattern().matcher(argument);
 			Matcher tagMatch = tagRegex.matcher(argument);
 			if (idMatch.matches()) {
-				shardManager.getUserById(idMatch.group(1));
+				return shardManager.getUserById(idMatch.group(1));
 			} else if (mentionMatch.matches()) {
-				shardManager.getUserById(mentionMatch.group(1));
+				return shardManager.getUserById(mentionMatch.group(1));
 			} else if (tagMatch.matches()) {
 				String name = tagMatch.group(1).toLowerCase();
 				String discriminator = tagMatch.group(2);

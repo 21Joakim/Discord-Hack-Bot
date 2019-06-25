@@ -555,6 +555,11 @@ public class ModuleBasic {
 			return;
 		}
 		
+		if (role.isManaged()) {
+			event.reply("I cannot give a managed role :no_entry:").queue();
+			return;
+		}
+		
 		if (!event.getMember().canInteract(role)) {
 			event.reply("You cannot add a role which is higher or equal than your top role :no_entry:").queue();
 			return;
@@ -588,6 +593,11 @@ public class ModuleBasic {
 		Role role = ArgumentUtility.getRole(event.getGuild(), roleArgument);
 		if (role == null) {
 			event.reply("I could not find that role :no_entry:").queue();
+			return;
+		}
+		
+		if (role.isManaged()) {
+			event.reply("I cannot remove a managed role :no_entry:").queue();
 			return;
 		}
 		
@@ -662,6 +672,11 @@ public class ModuleBasic {
 			return;
 		}
 		
+		if (role.isManaged()) {
+			event.reply("I cannot delete a managed role :no_entry:").queue();
+			return;
+		}
+		
 		if (!event.getMember().canInteract(role)) {
 			event.reply("You cannot delete a role which is higher or equal than your top role :no_entry:").queue();
 			return;
@@ -695,7 +710,7 @@ public class ModuleBasic {
 		PermissionOverride channelOverride = channel.getPermissionOverride(event.getGuild().getPublicRole());
 		EnumSet<Permission> allowedPermissions = channelOverride == null ? EnumSet.noneOf(Permission.class) : channelOverride.getAllowed();
 		EnumSet<Permission> deniedPermissions = channelOverride == null ? EnumSet.noneOf(Permission.class) : channelOverride.getDenied();
-		if (channelOverride != null && deniedPermissions.contains(Permission.MESSAGE_WRITE)) {
+		if (deniedPermissions.contains(Permission.MESSAGE_WRITE)) {
 			deniedPermissions.remove(Permission.MESSAGE_WRITE);
 			channel.putPermissionOverride(event.getGuild().getPublicRole()).setPermissions(allowedPermissions, deniedPermissions).queue($ -> {
 				event.reply(channel.getAsMention() + " is no longer locked down").queue();
