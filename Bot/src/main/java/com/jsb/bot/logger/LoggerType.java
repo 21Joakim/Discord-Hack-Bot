@@ -1,12 +1,18 @@
 package com.jsb.bot.logger;
 
 public enum LoggerType {
+	/** {@link LoggerListener#onGuildMemberJoin(net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent)} */
 	MEMBER_JOIN(Category.MEMBER),
+	/** {@link LoggerListener#onGuildMemberLeave(net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent)} */
 	MEMBER_LEAVE(Category.MEMBER),
+	/** {@link LoggerListener#onGuildBan(net.dv8tion.jda.api.events.guild.GuildBanEvent)} */
 	MEMBER_BANNED(Category.MEMBER),
 	MEMBER_UNBANNED(Category.MEMBER),
+	/** {@link LoggerListener#onGuildMemberUpdateNickname(net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateNicknameEvent)} */
 	MEMBER_NICKNAME_CHANGE(Category.MEMBER),
+	/** {@link LoggerListener#onGuildMemberRoleAdd(net.dv8tion.jda.api.events.guild.member.GuildMemberRoleAddEvent)} */
 	MEMBER_ROLE_ADD(Category.MEMBER),
+	/** {@link LoggerListener#onGuildMemberRoleRemove(net.dv8tion.jda.api.events.guild.member.GuildMemberRoleRemoveEvent)} */
 	MEMBER_ROLE_REMOVE(Category.MEMBER),
 	
 	ROLE_CREATE(Category.ROLE),
