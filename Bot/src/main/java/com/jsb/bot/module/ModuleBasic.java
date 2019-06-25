@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -22,7 +23,9 @@ import net.dv8tion.jda.api.entities.Guild.Ban;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Message.Attachment;
+import net.dv8tion.jda.api.entities.PermissionOverride;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
@@ -672,6 +675,37 @@ public class ModuleBasic {
 		role.delete().queue($ -> {
 			event.reply("`" + role.getName() + "` has been deleted").queue();
 		});
+	}
+	
+	@Command(value="lockdown", description="Lockdown a specific channel so no one without overrides can speak in the channel")
+	@AuthorPermissions({Permission.MANAGE_SERVER})
+	@BotPermissions({Permission.MANAGE_PERMISSIONS})
+	public void lockdown(CommandEvent event, @Argument(value="channel", endless=true, nullDefault=true) String channelArgument) {
+		TextChannel channel;
+		if (channelArgument == null) {
+			channel = event.getTextChannel();
+		} else {
+			channel = ArgumentUtility.getTextChannel(event.getGuild(), channelArgument);
+			if (channel == null) {
+				event.reply("I could not find that text channel :no_entry:").queue();
+				return;
+			}
+		}
+		
+		PermissionOverride channelOverride = channel.getPermissionOverride(event.getGuild().getPublicRole());
+		EnumSet<Permission> allowedPermissions = channelOverride == null ? EnumSet.noneOf(Permission.class) : channelOverride.getAllowed();
+		EnumSet<Permission> deniedPermissions = channelOverride == null ? EnumSet.noneOf(Permission.class) : channelOverride.getDenied();
+		if (channelOverride != null && deniedPermissions.contains(Permission.MESSAGE_WRITE)) {
+			deniedPermissions.remove(Permission.MESSAGE_WRITE);
+			channel.putPermissionOverride(event.getGuild().getPublicRole()).setPermissions(allowedPermissions, deniedPermissions).queue($ -> {
+				event.reply(channel.getAsMention() + " is no longer locked down").queue();
+			});
+		} else {
+			deniedPermissions.add(Permission.MESSAGE_WRITE);
+			channel.putPermissionOverride(event.getGuild().getPublicRole()).setPermissions(allowedPermissions, deniedPermissions).queue($ -> {
+				event.reply(channel.getAsMention() + " is now locked down").queue();
+			});
+		}
 	}
 	
 }

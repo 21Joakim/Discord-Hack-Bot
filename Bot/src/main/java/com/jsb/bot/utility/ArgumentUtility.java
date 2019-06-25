@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message.MentionType;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.sharding.ShardManager;
@@ -21,24 +22,41 @@ public class ArgumentUtility {
 	
 	private static final Pattern idRegex = Pattern.compile("(\\d+)");
 	private static final Pattern tagRegex = Pattern.compile("(.{2,32})#(\\d{4})");
+	
+	public static TextChannel getTextChannel(Guild guild, String argument) {
+		try {
+			Matcher idMatch = idRegex.matcher(argument);
+			Matcher mentionMatch = MentionType.CHANNEL.getPattern().matcher(argument);
+			if (idMatch.matches()) {
+				guild.getTextChannelById(idMatch.group(1));
+			} else if (mentionMatch.matches()) {
+				guild.getTextChannelById(mentionMatch.group(1));
+			} else {
+				List<TextChannel> textChannels = guild.getTextChannelsByName(argument, true);
+				if (!textChannels.isEmpty()) {
+					return textChannels.get(0);
+				}
+			}
+		} catch(NumberFormatException e) {}
+		
+		return null;
+	}
 
 	public static Role getRole(Guild guild, String argument) {
-		if (argument.length() <= 100) {
-			try {
-				Matcher idMatch = idRegex.matcher(argument);
-				Matcher mentionMatch = MentionType.ROLE.getPattern().matcher(argument);
-				if (idMatch.matches()) {
-					guild.getRoleById(idMatch.group(1));
-				} else if (mentionMatch.matches()) {
-					guild.getRoleById(mentionMatch.group(1));
-				} else {
-					List<Role> roles = guild.getRolesByName(argument, true);
-					if (!roles.isEmpty()) {
-						return roles.get(0);
-					}
+		try {
+			Matcher idMatch = idRegex.matcher(argument);
+			Matcher mentionMatch = MentionType.ROLE.getPattern().matcher(argument);
+			if (idMatch.matches()) {
+				guild.getRoleById(idMatch.group(1));
+			} else if (mentionMatch.matches()) {
+				guild.getRoleById(mentionMatch.group(1));
+			} else {
+				List<Role> roles = guild.getRolesByName(argument, true);
+				if (!roles.isEmpty()) {
+					return roles.get(0);
 				}
-			} catch(NumberFormatException e) {}
-		}
+			}
+		} catch(NumberFormatException e) {}
 		
 		return null;
 	}
