@@ -135,6 +135,7 @@ public class PagedResult<Type> {
 	
 	public PagedResult<Type> setEntriesPerPage(int entriesPerPage) {
 		this.entriesPerPage = entriesPerPage;
+		this.pages = (int) Math.ceil(this.entries.size()/(double) entriesPerPage);
 		
 		return this;
 	}
@@ -292,7 +293,7 @@ public class PagedResult<Type> {
 	
 	public List<? extends Type> getCurrentPageEntries() {
 		int[] bounds = this.getPageBounds();
-		
+
 		return this.entries.subList(bounds[0], bounds[0] + bounds[1]);
 	}
 	

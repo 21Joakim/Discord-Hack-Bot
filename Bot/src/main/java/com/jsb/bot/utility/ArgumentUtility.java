@@ -1,8 +1,12 @@
 package com.jsb.bot.utility;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.jockie.bot.core.command.ICommand;
+import com.jockie.bot.core.command.impl.CommandListener;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -114,6 +118,35 @@ public class ArgumentUtility {
 		} catch(NumberFormatException e) {}
 		
 		return new EmptyRestAction<User>(shardManager.getShardCache().getElementById(0), null);
+	}
+	
+	public static ICommand getCommand(CommandListener commandListener, String argument) {
+		argument = argument.toLowerCase();
+		for (ICommand command : commandListener.getAllCommands()) {
+			ICommand parent = command;
+			List<String> allAliases = new ArrayList<>(parent.getAliases());
+			allAliases.add(parent.getCommand());
+			
+			while (parent.hasParent()) {
+				parent = parent.getParent();
+				List<String> commandAliases = new ArrayList<>(parent.getAliases());
+				commandAliases.add(parent.getCommand());
+				for (String commandAlias : new ArrayList<>(allAliases)) {
+					for (String alias : commandAliases) {
+						allAliases.remove(commandAlias);
+						allAliases.add(alias + " " + commandAlias);
+					}
+				}
+			}
+			
+			for (String alias : allAliases) {
+				if (alias.equals(argument)) {
+					return command;
+				}
+			}
+		}
+		
+		return null;
 	}
 	
 }

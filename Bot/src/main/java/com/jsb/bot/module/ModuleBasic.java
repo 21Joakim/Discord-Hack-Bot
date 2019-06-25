@@ -345,12 +345,12 @@ public class ModuleBasic {
 		}
 		
 		if (!event.getMember().canInteract(member)) {
-			event.reply("You cannot kick a user with a higher top role than yours :no_entry:").queue();
+			event.reply("You cannot kick a user with a higher or equal top role than yours :no_entry:").queue();
 			return;
 		}
 		
 		if (!event.getSelfMember().canInteract(member)) {
-			event.reply("I cannot kick a user with a higher top role than me :no_entry:").queue();
+			event.reply("I cannot kick a user with a higher or equal top role than me :no_entry:").queue();
 			return;
 		}
 		
@@ -414,12 +414,12 @@ public class ModuleBasic {
 		}
 		
 		if (!event.getMember().canInteract(member)) {
-			event.reply("You cannot ban a user with a higher top role than yours :no_entry:").queue();
+			event.reply("You cannot ban a user with a higher or equal top role than yours :no_entry:").queue();
 			return;
 		}
 		
 		if (!event.getSelfMember().canInteract(member)) {
-			event.reply("I cannot ban a user with a higher top role than me :no_entry:").queue();
+			event.reply("I cannot ban a user with a higher or equal top role than me :no_entry:").queue();
 			return;
 		}
 		
@@ -515,12 +515,12 @@ public class ModuleBasic {
 		}
 		
 		if (!event.getMember().canInteract(member)) {
-			event.reply("You cannot rename a user with a higher top role than yours :no_entry:").queue();
+			event.reply("You cannot rename a user with a higher or equal top role than yours :no_entry:").queue();
 			return;
 		}
 		
 		if (!event.getSelfMember().canInteract(member)) {
-			event.reply("I cannot rename a user with a higher top role than me :no_entry:").queue();
+			event.reply("I cannot rename a user with a higher or equal top role than me :no_entry:").queue();
 			return;
 		}
 		
@@ -553,12 +553,12 @@ public class ModuleBasic {
 		}
 		
 		if (!event.getMember().canInteract(role)) {
-			event.reply("You cannot add a role which is higher than your top role :no_entry:").queue();
+			event.reply("You cannot add a role which is higher or equal than your top role :no_entry:").queue();
 			return;
 		}
 		
 		if (!event.getSelfMember().canInteract(role)) {
-			event.reply("I cannot add a role which is higher than my top role :no_entry:").queue();
+			event.reply("I cannot add a role which is higher or equal than my top role :no_entry:").queue();
 			return;
 		}
 		
@@ -589,12 +589,12 @@ public class ModuleBasic {
 		}
 		
 		if (!event.getMember().canInteract(role)) {
-			event.reply("You cannot remove a role which is higher than your top role :no_entry:").queue();
+			event.reply("You cannot remove a role which is higher or equal than your top role :no_entry:").queue();
 			return;
 		}
 		
 		if (!event.getSelfMember().canInteract(role)) {
-			event.reply("I cannot remove a role which is higher than my top role :no_entry:").queue();
+			event.reply("I cannot remove a role which is higher or equal than my top role :no_entry:").queue();
 			return;
 		}
 		
@@ -660,12 +660,12 @@ public class ModuleBasic {
 		}
 		
 		if (!event.getMember().canInteract(role)) {
-			event.reply("You cannot delete a role which is higher than your top role :no_entry:").queue();
+			event.reply("You cannot delete a role which is higher or equal than your top role :no_entry:").queue();
 			return;
 		}
 		
 		if (!event.getSelfMember().canInteract(role)) {
-			event.reply("I cannot delete a role which is higher than my top role :no_entry:").queue();
+			event.reply("I cannot delete a role which is higher or equal than my top role :no_entry:").queue();
 			return;
 		}
 		
