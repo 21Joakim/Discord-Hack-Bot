@@ -9,7 +9,7 @@ import org.json.JSONObject;
 import com.jockie.bot.core.command.impl.CommandListener;
 import com.jockie.bot.core.command.impl.CommandStore;
 import com.jsb.bot.database.Database;
-import com.jsb.bot.listener.LoggerListener;
+import com.jsb.bot.logger.LoggerListener;
 import com.jsb.bot.paged.PagedManager;
 
 import net.dv8tion.jda.api.JDA;
@@ -27,6 +27,10 @@ public class JSBBot {
 		
 		/* Connect to the database */
 		Database.get();
+		
+		Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+			throwable.printStackTrace();
+		});
 		
 		CommandListener listener = new CommandListener()
 			.addCommandStore(CommandStore.of("com.jsb.bot.command"))

@@ -2,6 +2,7 @@ package com.jsb.bot.command;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -95,9 +96,9 @@ public class CommandLogger extends CommandImpl {
 		}else{
 			UpdateOptions options = new UpdateOptions().arrayFilters(List.of(Filters.eq("logger.channelId", logger.getLong("channelId"))));
 			
-			Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("logger.loggers.$[logger].enabled", enable), options, (result, exception2) -> {
-				if(exception2 != null) {
-					exception2.printStackTrace();
+			Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("logger.loggers.$[logger].enabled", enable), options, (result, exception) -> {
+				if(exception != null) {
+					exception.printStackTrace();
 					
 					event.reply("Something went wrong :no_entry:").queue();
 				}else{
@@ -107,7 +108,7 @@ public class CommandLogger extends CommandImpl {
 		}
 	}
 	
-	private void executeEnableLogger(CommandEvent event, TextChannel channel, boolean enable) {
+	private void getLoggerPerform(CommandEvent event, TextChannel channel, Consumer<Document> consumer) {
 		Callback<Document> callback = (data, exception) -> {
 			if(exception != null) {
 				exception.printStackTrace();
@@ -117,12 +118,12 @@ public class CommandLogger extends CommandImpl {
 				List<Document> loggers = data.getEmbedded(List.of("logger", "loggers"), Collections.emptyList());
 				if(loggers.size() > 0) {
 					if(loggers.size() == 1) {
-						this.enableLogger(event, loggers.get(0), enable);
+						consumer.accept(data);
 					}else{
 						new PagedResult<>(loggers)
 							.setDisplayFunction(logger -> this.getTextChannelName(event.getGuild(), logger.getLong("channelId")))
 							.onSelect(selectEvent -> {
-								this.enableLogger(event, selectEvent.entry, enable);
+								consumer.accept(selectEvent.entry);
 							})
 							.send(event);
 					}
@@ -135,26 +136,62 @@ public class CommandLogger extends CommandImpl {
 				}
 			}
 		};
-
+		
 		if(channel != null) {
 			Bson filter = Filters.eq("logger.loggers.channelId", channel.getIdLong());
 			Bson include = Projections.include("logger.loggers.$");
 			
 			Database.get().getGuildById(event.getGuild().getIdLong(), filter, include, callback);
 		}else{
-			Database.get().getGuildById(event.getGuild().getIdLong(), null, Projections.include("logger.loggers.channelId", "logger.loggers.enabled"), callback);
+			Database.get().getGuildById(event.getGuild().getIdLong(), callback);
 		}
 	}
 	
 	@AuthorPermissions(Permission.MANAGE_SERVER)
 	@Command(value="disable")
 	public void disable(CommandEvent event, @Argument(value="channel", nullDefault=true) TextChannel channel) {
-		this.executeEnableLogger(event, channel, false);
+		this.getLoggerPerform(event, channel, document -> {
+			this.enableLogger(event, document, false);
+		});
 	}
 	
 	@AuthorPermissions(Permission.MANAGE_SERVER)
 	@Command(value="enable")
 	public void enable(CommandEvent event, @Argument(value="channel", nullDefault=true) TextChannel channel) {
-		this.executeEnableLogger(event, channel, true);
+		this.getLoggerPerform(event, channel, document -> {
+			this.enableLogger(event, document, true);
+		});
+	}
+	
+	@Command(value="disable event")
+	public void disableEvent(CommandEvent event, @Argument(value="channel", nullDefault=true) TextChannel channel, @Argument(value="event") String eventType) {
+		String type = eventType.toUpperCase();
+		
+		this.getLoggerPerform(event, channel, logger -> {
+			Document document = logger.getList("disabledEvents", Document.class, Collections.emptyList()).stream()
+				.filter(e -> e.getString("type").equals(type))
+				.findFirst()
+				.orElse(null);
+			
+			if(document != null) {
+				event.reply("`" + type + "` has already been disabled for " + this.getTextChannelName(event.getGuild(), logger.getLong("channelId"))).queue();
+				
+				return;
+			}
+			
+			Document loggerEvent = new Document("type", type);
+			
+			UpdateOptions options = new UpdateOptions().arrayFilters(List.of(Filters.eq("logger.channelId", logger.getLong("channelId"))));
+			
+			Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.push("logger.loggers.$[logger].disabledEvents", loggerEvent), options, (result, exception) -> {
+				if(exception != null) {
+					exception.printStackTrace();
+					
+					event.reply("Something went wrong :no_entry:").queue();
+				}else{
+					event.reply("Disabled `" + type + "` for " + this.getTextChannelName(event.getGuild(), logger.getLong("channelId"))).queue();
+				}
+			});
+		});
 	}
 }
