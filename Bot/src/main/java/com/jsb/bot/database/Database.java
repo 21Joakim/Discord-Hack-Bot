@@ -6,6 +6,7 @@ import java.util.concurrent.Executors;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
 import org.json.JSONObject;
 
 import com.jsb.bot.core.JSBBot;
@@ -61,8 +62,10 @@ public class Database {
 		this.database = this.client.getDatabase(mongodb.getString("database"));
 		
 		this.guilds = this.database.getCollection("guilds");
+		
 		this.modlogCases = this.database.getCollection("modlogCases");
 		this.modlogCases.createIndex(Indexes.ascending("guildId"));
+		this.modlogCases.createIndex(Indexes.ascending("id"));
 		
 		System.out.println("Connecting to MongoDB...");
 		
@@ -89,9 +92,33 @@ public class Database {
 		return this.modlogCases.find(Filters.eq("guildId", guildId));
 	}
 	
+	public Document getModlogCase(long guildId, int id) {
+		return this.getModlogCasesFromGuild(guildId).filter(Filters.eq("id", id)).first();
+	}
+	
+	public void getModlogCase(long guildId, int id, Callback<Document> callback) {
+		this.queryExecutor.submit(() -> {
+			try {
+				callback.onResult(this.getModlogCase(guildId, id), null);
+			}catch(Throwable e) {
+				callback.onResult(null, e);
+			}
+		});
+	}
+	
 	public void insertModlogCase(Document document) {
 		this.queryExecutor.submit(() -> {
 			this.modlogCases.insertOne(document);
+		});
+	}
+	
+	public void updateModlogCase(ObjectId id, Bson update, Callback<UpdateResult> callback) {
+		this.queryExecutor.submit(() -> {
+			try {
+				callback.onResult(this.modlogCases.updateOne(Filters.eq("_id", id), update, this.defaultUpdateOptions), null);
+			}catch(Throwable e) {
+				callback.onResult(null, e);
+			}
 		});
 	}
 	

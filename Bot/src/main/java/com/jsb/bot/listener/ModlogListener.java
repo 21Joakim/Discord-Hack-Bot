@@ -39,12 +39,29 @@ public class ModlogListener {
 							embed.setTimestamp(Instant.now());
 							
 							if (guild.getSelfMember().hasPermission(channel, Permission.MESSAGE_EMBED_LINKS) && guild.getSelfMember().hasPermission(channel, Permission.MESSAGE_WRITE)) {
-								channel.sendMessage(embed.build()).queue();
+								channel.sendMessage(embed.build()).queue(message -> {
+									Document newCase = new Document()
+											.append("guildId", guild.getIdLong())
+											.append("messageId", message.getIdLong())
+											.append("channelId", channel.getIdLong())
+											.append("moderator", moderator.getIdLong())
+											.append("user", user.getIdLong())
+											.append("createdAt", Clock.systemUTC().instant().getEpochSecond())
+											.append("id", caseId)
+											.append("reason", reason)
+											.append("automatic", automatic);
+									
+									Database.get().insertModlogCase(newCase);
+								});
+								
+								return;
 							}
 						}
 						
 						Document newCase = new Document()
 								.append("guildId", guild.getIdLong())
+								.append("messageId", null)
+								.append("channelId", null)
 								.append("moderator", moderator.getIdLong())
 								.append("user", user.getIdLong())
 								.append("createdAt", Clock.systemUTC().instant().getEpochSecond())

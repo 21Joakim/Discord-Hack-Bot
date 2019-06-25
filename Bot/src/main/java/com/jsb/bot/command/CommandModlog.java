@@ -14,7 +14,10 @@ import com.jsb.bot.utility.MiscUtility;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Updates;
 
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.MessageEmbed.Field;
 import net.dv8tion.jda.api.entities.TextChannel;
 
 public class CommandModlog extends CommandImpl {
@@ -88,7 +91,7 @@ public class CommandModlog extends CommandImpl {
 		UNBAN("Unban"),
 		KICK("Kick"),
 		MUTE("Mute"),
-		WARN("Warm"),
+		WARN("Warn"),
 		VOICE_KICK("Voice Kick");
 		
 		private String name;
@@ -134,6 +137,58 @@ public class CommandModlog extends CommandImpl {
 						event.reply("Something went wrong :no_entry:").queue();
 					} else {
 						event.reply("The action `" + action.toString() + "` is now " + (contains ? "enabled" : "disabled")).queue();
+					}
+				});
+			}
+		});
+	}
+	
+	@Command(value="edit", description="Edit a reasoning of a modlog you own")
+	public void edit(CommandEvent event, @Argument(value="case id") int caseId, @Argument(value="reason", endless=true) String reason) {
+		Database.get().getModlogCase(event.getGuild().getIdLong(), caseId, (data, readException) -> {
+			if (readException != null) {
+				readException.printStackTrace();
+				
+				event.reply("Something went wrong :no_entry:").queue();
+			} else {
+				String currentReason = data.getString("reason");
+				Long messageId = data.getLong("messageId");
+				Long channelId = data.getLong("channelId");
+				if (currentReason != null && reason.equals(currentReason)) {
+					event.reply("The reason is already set to that :no_entry:").queue();
+					return;
+				}
+				
+				if (channelId != null && messageId != null) {
+					TextChannel channel = event.getGuild().getTextChannelById(channelId);
+					if (channel != null) {
+						channel.retrieveMessageById(messageId).queue(message -> {
+							MessageEmbed embed = message.getEmbeds().get(0);
+							
+							EmbedBuilder newEmbed = new EmbedBuilder();
+							newEmbed.setTitle(embed.getTitle());
+							newEmbed.setTimestamp(embed.getTimestamp());
+							
+							for (Field field : embed.getFields()) {
+								if (field.getName().equals("Reason")) {
+									newEmbed.addField(field.getName(), reason, field.isInline());
+								} else {
+									newEmbed.addField(field);
+								}
+							}
+							
+							message.editMessage(newEmbed.build()).queue();
+						}, e -> {});
+					}
+				}
+				
+				Database.get().updateModlogCase(data.getObjectId("_id"), Updates.set("reason", reason), (result, writeException) -> {
+					if (writeException != null) {
+						writeException.printStackTrace();
+						
+						event.reply("Something went wrong :no_entry:").queue();
+					} else {
+						event.reply("Case **" + data.getLong("id") + "** has been updated").queue();
 					}
 				});
 			}
