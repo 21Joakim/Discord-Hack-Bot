@@ -13,4 +13,5 @@ repositories {
 dependencies {
 	implementation 'com.github.21Joakim:Jockie-Utils:jda-v4-SNAPSHOT'
 	implementation 'org.mongodb:mongodb-driver-sync:3.10.2'
+	implementation 'club.minnced:discord-webhooks:0.1.7'
 }
