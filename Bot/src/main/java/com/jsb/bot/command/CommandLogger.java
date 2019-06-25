@@ -118,7 +118,7 @@ public class CommandLogger extends CommandImpl {
 				List<Document> loggers = data.getEmbedded(List.of("logger", "loggers"), Collections.emptyList());
 				if(loggers.size() > 0) {
 					if(loggers.size() == 1) {
-						consumer.accept(data);
+						consumer.accept(loggers.get(0));
 					}else{
 						new PagedResult<>(loggers)
 							.setDisplayFunction(logger -> this.getTextChannelName(event.getGuild(), logger.getLong("channelId")))
