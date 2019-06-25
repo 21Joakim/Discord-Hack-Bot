@@ -76,16 +76,21 @@ public class Database {
 		return this.guilds;
 	}
 	
-	public Document getGuildById(long guildId, Bson projection) {
-		Document document = this.guilds.find(Filters.eq("_id", guildId)).projection(projection).first();
+	public Document getGuildById(long guildId, Bson filter, Bson projection) {
+		Document document;
+		if(filter != null) {
+			document = this.guilds.find(Filters.and(Filters.eq("_id", guildId), filter)).projection(projection).first();
+		}else{
+			document = this.guilds.find(Filters.eq("_id", guildId)).projection(projection).first();
+		}
 		
 		return document == null ? Database.EMPTY_DOCUMENT : document;
 	}
 	
-	public void getGuildById(long guildId, Bson projection, Callback<Document> callback) {
+	public void getGuildById(long guildId, Bson filter, Bson projection, Callback<Document> callback) {
 		this.queryExecutor.submit(() -> {
 			try {
-				callback.onResult(this.getGuildById(guildId, projection), null);
+				callback.onResult(this.getGuildById(guildId, filter, projection), null);
 			}catch(Throwable e) {
 				callback.onResult(null, e);
 			}
@@ -93,24 +98,52 @@ public class Database {
 	}
 	
 	public Document getGuildById(long guildId) {
-		return this.getGuildById(guildId, (Bson) null);
+		return this.getGuildById(guildId, null, null);
 	}
 	
 	public void getGuildById(long guildId, Callback<Document> callback) {
-		this.getGuildById(guildId, null, callback);
+		this.getGuildById(guildId, null, null, callback);
+	}
+	
+	public UpdateResult updateGuildById(long guildId, Bson filter, Bson update, UpdateOptions options) {
+		if(filter != null) {
+			return this.guilds.updateOne(Filters.and(Filters.eq("_id", guildId), filter), update, options != null ? options : this.defaultUpdateOptions);
+		}else{
+			return this.guilds.updateOne(Filters.eq("_id", guildId), update, options != null ? options : this.defaultUpdateOptions);
+		}
+	}
+	
+	public UpdateResult updateGuildById(long guildId, Bson filter, Bson update) {
+		return this.updateGuildById(guildId, (Bson) null, update, (UpdateOptions) null);
+	}
+	
+	public UpdateResult updateGuildById(long guildId, Bson update, UpdateOptions options) {
+		return this.updateGuildById(guildId, (Bson) null, update, options);
 	}
 	
 	public UpdateResult updateGuildById(long guildId, Bson update) {
-		return this.guilds.updateOne(Filters.eq("_id", guildId), update, this.defaultUpdateOptions);
+		return this.updateGuildById(guildId, (Bson) null, update, (UpdateOptions) null);
 	}
 	
-	public void updateGuildById(long guildId, Bson update, Callback<UpdateResult> callback) {
+	public void updateGuildById(long guildId, Bson filter, Bson update, UpdateOptions options, Callback<UpdateResult> callback) {
 		this.queryExecutor.submit(() -> {
 			try {
-				callback.onResult(this.updateGuildById(guildId, update), null);
+				callback.onResult(this.updateGuildById(guildId, filter, update, options), null);
 			}catch(Throwable e) {
 				callback.onResult(null, e);
 			}
 		});
+	}
+	
+	public void updateGuildById(long guildId, Bson filter, Bson update, Callback<UpdateResult> callback) {
+		this.updateGuildById(guildId, filter, update, null, callback);
+	}
+	
+	public void updateGuildById(long guildId, Bson update, UpdateOptions options, Callback<UpdateResult> callback) {
+		this.updateGuildById(guildId, null, update, options, callback);
+	}
+	
+	public void updateGuildById(long guildId, Bson update, Callback<UpdateResult> callback) {
+		this.updateGuildById(guildId, null, update, null, callback);
 	}
 }
