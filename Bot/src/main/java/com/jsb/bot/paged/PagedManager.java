@@ -74,19 +74,21 @@ public class PagedManager implements EventListener {
 	
 	public boolean onNext(Message message) {
 		PagedResult<?> pagedResult = this.getPagedResult(message);
-		if(pagedResult.nextPage()) {
-			if(pagedResult.getMessage() != null) {
-				pagedResult.getMessage().editMessage(pagedResult.getCurrentPageAsEmbed().build()).queue(null, exception -> {
-					this.removePagedResult(message, pagedResult);
-					this.timeoutFutures.get(pagedResult).cancel(false);
-				});
+		if(pagedResult != null) {
+			if(pagedResult.nextPage()) {
+				if(pagedResult.getMessage() != null) {
+					pagedResult.getMessage().editMessage(pagedResult.getCurrentPageAsEmbed().build()).queue(null, exception -> {
+						this.removePagedResult(message, pagedResult);
+						this.timeoutFutures.get(pagedResult).cancel(false);
+					});
+				}
+				
+				if(message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_MANAGE)) {
+					message.delete().queue();
+				}
+				
+				return true;
 			}
-			
-			if(message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_MANAGE)) {
-				message.delete().queue();
-			}
-			
-			return true;
 		}
 		
 		return false;
@@ -94,19 +96,21 @@ public class PagedManager implements EventListener {
 	
 	public boolean onPrevious(Message message) {
 		PagedResult<?> pagedResult = this.getPagedResult(message);
-		if(pagedResult.previousPage()) {
-			if(pagedResult.getMessage() != null) {
-				pagedResult.getMessage().editMessage(pagedResult.getCurrentPageAsEmbed().build()).queue(null, exception -> {
-					this.removePagedResult(message, pagedResult);
-					this.timeoutFutures.get(pagedResult).cancel(false);
-				});
+		if(pagedResult != null) {
+			if(pagedResult.previousPage()) {
+				if(pagedResult.getMessage() != null) {
+					pagedResult.getMessage().editMessage(pagedResult.getCurrentPageAsEmbed().build()).queue(null, exception -> {
+						this.removePagedResult(message, pagedResult);
+						this.timeoutFutures.get(pagedResult).cancel(false);
+					});
+				}
+				
+				if(message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_MANAGE)) {
+					message.delete().queue();
+				}
+				
+				return true;
 			}
-			
-			if(message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_MANAGE)) {
-				message.delete().queue();
-			}
-			
-			return true;
 		}
 		
 		return false;
@@ -114,35 +118,19 @@ public class PagedManager implements EventListener {
 	
 	public boolean onCancel(Message message) {
 		PagedResult<?> pagedResult = this.getPagedResult(message);
-		pagedResult.cancel();
-		
-		if(pagedResult.getMessage() != null) {
-			pagedResult.getMessage().delete().queue();
-		}
-		
-		if(message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_MANAGE)) {
-			message.delete().queue();
-		}
-		
-		this.removePagedResult(message, pagedResult);
-		this.timeoutFutures.get(pagedResult).cancel(false);
-		
-		return true;
-	}
-	
-	public boolean onGoto(Message message, int page) {
-		PagedResult<?> pagedResult = this.getPagedResult(message);
-		if(pagedResult.setPage(page)) {
+		if(pagedResult != null) {
+			pagedResult.cancel();
+			
 			if(pagedResult.getMessage() != null) {
-				pagedResult.getMessage().editMessage(pagedResult.getCurrentPageAsEmbed().build()).queue(null, exception -> {
-					this.removePagedResult(message, pagedResult);
-					this.timeoutFutures.get(pagedResult).cancel(false);
-				});
+				pagedResult.getMessage().delete().queue();
 			}
 			
 			if(message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_MANAGE)) {
 				message.delete().queue();
 			}
+			
+			this.removePagedResult(message, pagedResult);
+			this.timeoutFutures.get(pagedResult).cancel(false);
 			
 			return true;
 		}
@@ -150,23 +138,47 @@ public class PagedManager implements EventListener {
 		return false;
 	}
 	
-	public boolean onSelect(Message message, int index) {
+	public boolean onGoto(Message message, int page) {
 		PagedResult<?> pagedResult = this.getPagedResult(message);
-		if(pagedResult.isSelectable()) {
-			if(pagedResult.select(index)) {
+		if(pagedResult != null) {
+			if(pagedResult.setPage(page)) {
 				if(pagedResult.getMessage() != null) {
-					pagedResult.getMessage().delete().queue();
+					pagedResult.getMessage().editMessage(pagedResult.getCurrentPageAsEmbed().build()).queue(null, exception -> {
+						this.removePagedResult(message, pagedResult);
+						this.timeoutFutures.get(pagedResult).cancel(false);
+					});
 				}
 				
 				if(message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_MANAGE)) {
 					message.delete().queue();
 				}
 				
-				this.removePagedResult(message, pagedResult);
-				this.timeoutFutures.get(pagedResult).cancel(false);
+				return true;
 			}
-			
-			return true;
+		}
+		
+		return false;
+	}
+	
+	public boolean onSelect(Message message, int index) {
+		PagedResult<?> pagedResult = this.getPagedResult(message);
+		if(pagedResult != null) {
+			if(pagedResult.isSelectable()) {
+				if(pagedResult.select(index)) {
+					if(pagedResult.getMessage() != null) {
+						pagedResult.getMessage().delete().queue();
+					}
+					
+					if(message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_MANAGE)) {
+						message.delete().queue();
+					}
+					
+					this.removePagedResult(message, pagedResult);
+					this.timeoutFutures.get(pagedResult).cancel(false);
+				}
+				
+				return true;
+			}
 		}
 		
 		return false;
