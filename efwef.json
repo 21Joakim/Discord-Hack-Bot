@@ -1,0 +1,119 @@
+[
+  {
+    "categoryName": "cat1",
+    "commands": [
+      {
+        "name": "com1",
+        "aliases": [
+          "com1a",
+          "com1b",
+          "com1c"
+        ],
+        "usage": "com1 <x>",
+        "subCommands": [
+          {
+            "name": "subcommmm",
+            "usage": "com1 subcom <x>",
+            "description": "this subcom does this thing",
+            "authorPermissions": 0,
+            "botPermissions": 0
+          },
+          {
+            "name": "subcom2",
+            "usage": "com1 subcom2 <x>",
+            "description": "this subcom2 does this thing",
+            "authorPermissions": 0,
+            "botPermissions": 0
+          }
+        ],
+        "description": "this com does this thing",
+        "authorPermissions": 0,
+        "botPermissions": 0
+      },
+      {
+        "name": "com2",
+        "aliases": [
+          "com2a",
+          "com2b"
+        ],
+        "usage": "com2 <x>",
+        "subCommands": [
+          {
+            "name": "subcom",
+            "usage": "com2 subcom <x>",
+            "description": "this subcom does this thing",
+            "authorPermissions": 0,
+            "botPermissions": 0
+          }
+        ],
+        "description": "this com does this thing",
+        "authorPermissions": 0,
+        "botPermissions": 0
+      },
+      {
+        "name": "com3",
+        "aliases": [],
+        "usage": "com3 <x>",
+        "subCommands": [],
+        "description": "this com does this thing",
+        "authorPermissions": 0,
+        "botPermissions": 0
+      }
+    ]
+  },
+  {
+    "categoryName": "cat2",
+    "commands": [
+      {
+        "name": "com4",
+        "aliases": [
+          "com1a",
+          "com1b",
+          "com1c"
+        ],
+        "usage": "com1 <x>",
+        "subCommands": [
+          {
+            "name": "subcom",
+            "usage": "com1 subcom <x>",
+            "description": "this subcom does this thing",
+            "authorPermissions": 0,
+            "botPermissions": 0
+          }
+        ],
+        "description": "this com does this thing",
+        "authorPermissions": 0,
+        "botPermissions": 0
+      },
+      {
+        "name": "com5",
+        "aliases": [
+          "com2a",
+          "com2b"
+        ],
+        "usage": "com2 <x>",
+        "subCommands": [
+          {
+            "name": "subcom",
+            "usage": "com2 subcom <x>",
+            "description": "this subcom does this thing",
+            "authorPermissions": 0,
+            "botPermissions": 0
+          }
+        ],
+        "description": "this com does this thing",
+        "authorPermissions": 0,
+        "botPermissions": 0
+      },
+      {
+        "name": "com6",
+        "aliases": [],
+        "usage": "com3 <x>",
+        "subCommands": [],
+        "description": "this com does this thing",
+        "authorPermissions": 0,
+        "botPermissions": 0
+      }
+    ]
+  }
+];

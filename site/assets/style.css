@@ -4,8 +4,14 @@
   --blurple: #7289DA;
   --blurple2: #4e5d94;
   --white: #FFF;
-  --white2: #B9BBBE;
+  --white2: #D2D3D3;
+  --white3: #B9BBBE;
+  --white4: #DCDDDE;
   --grey: #72767D;
+  --grey2: #4F545C;
+  --grey3: #282B30;
+  --grey4: #2E3136;
+  --grey5: #35383C;
   --black: #202225;
   --black2: #18191C;
   --red: #F04747;
@@ -192,7 +198,7 @@ a {
   padding: 20px 20px 17px;
   font: 400 16px whitney; 
   line-height: 20px;
-  color: var(--white2);
+  color: var(--white3);
 }
 .navListWrapper li a:hover,
 .navListWrapper li.selected a:hover {
@@ -254,7 +260,7 @@ a {
   transform: translateY(0px);
 }
 .profileHolder .left{
-  color: var(--white2);
+  color: var(--white3);
   font: 400 12px whitney;
   line-height: 16px;
   margin-right: 10px;
@@ -327,7 +333,7 @@ a {
 .sectionDescription {
   font: 400 16px whitney;
   line-height: 24px;
-  color: var(--white2);
+  color: var(--white3);
   margin: 0 0 25px;
 }
 /*------server------*/
@@ -369,7 +375,7 @@ a {
 .categoryContainer {
   font: 600 12px whitney;
   line-height: 16px;
-  color: var(--white2);
+  color: var(--white4);
   text-transform: uppercase;
   list-style: none;
   padding: 0;
@@ -389,7 +395,7 @@ a {
 .categoryParent {
   font: 400 16px whitney;
   line-height: 20px;
-  color: var(--white2);
+  color: var(--white3);
   text-transform: capitalize;
   display: block;
   padding: 6px 8px 6px 0;
@@ -397,11 +403,15 @@ a {
   cursor: pointer;
   user-select: none;
 }
+.categoryParent a {
+  display: block;
+}
 .categoryParent:hover,
 .categoryParent.selected {
   color:var(--white);
 }
 
+/*
 .categoryParent.selected + .categoryChildren {
   display: block;
 }
@@ -444,7 +454,67 @@ a {
 .categoryChild:target a {
   opacity: 1;
 }
+*/
 
+.categoryTitle {
+  color: var(--white);
+  font: 500 26px whitney;
+  line-height: 32px;
+  text-transform: capitalize;
+}
+.categoryTitle.big {
+  font-size: 32px;
+  line-height: 34px;
+}
+.categoryHolder {
+  display: none;
+}
+.categoryHolder.selected {
+  display: block;
+}
+/*------table------*/
+.tableContainer table {
+  width: 100%;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px var(--grey3);
+  overflow: hidden;
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+.tableContainer caption {
+  text-align: left;
+  background-color: var(--grey2); 
+  text-transform: capitalize;
+  font: 600 16px whitney;
+  line-height: 24px;
+  color: var(--white);
+  padding: 6px 8px;
+}
+.tableContainer th {
+  border: 1px solid var(--black2);
+  text-transform: uppercase;
+  font: 600 12px whitney;
+  line-height: 15px;
+  color: var(--white2);
+  text-align: left;
+  background-color: var(--black);
+}
+.tableContainer td {
+  border: 1px solid var(--grey3);
+  font: 300 14px whitney;
+  line-height: 22px;
+  color: var(--white3);
+}
+.tableContainer tr {
+  background-color: var(--grey4);
+}
+.tableContainer tr:nth-child(2n) {
+  background-color: var(--grey5);
+}
+.tableContainer th, 
+.tableContainer td {
+  padding: 8px;
+}
 /*------responsive------*/
 @media screen and (max-width: 770px) {
   .navWrapper {
