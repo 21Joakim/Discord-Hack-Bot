@@ -59,4 +59,36 @@ public class MiscUtility {
 			.mapToInt(embed -> MiscUtility.getWebhookEmbedLength(embed))
 			.sum();
 	}
+	
+	public static boolean isNumber(String string) {
+	    char[] characterArray = string.toCharArray();
+	    for (int i = 0; i < characterArray.length; i++) {
+	        char character = characterArray[i];
+	        
+	        if (i == 0 && (character == '-' || character == '+')) {
+	            continue;
+	        }
+	        
+	        if (!Character.isDigit(character)) {
+	            return false;
+	        }
+	    }
+	    
+	    return true;
+	}
+
+	
+	public static boolean isWord(String string) {
+	    char[] characterArray = string.toCharArray();
+	    for (int i = 0; i < characterArray.length; i++) {
+	        char character = characterArray[i];
+	        
+	        if (!Character.isLetter(character)) {
+	            return false;
+	        }
+	    }
+	    
+	    return true;
+	}
+
 }

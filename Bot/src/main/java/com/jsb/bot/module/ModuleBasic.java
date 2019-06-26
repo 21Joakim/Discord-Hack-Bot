@@ -1,13 +1,19 @@
 package com.jsb.bot.module;
 
 import java.awt.Color;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import org.bson.Document;
 
 import com.jockie.bot.core.argument.Argument;
 import com.jockie.bot.core.command.Command;
@@ -16,9 +22,14 @@ import com.jockie.bot.core.command.Command.BotPermissions;
 import com.jockie.bot.core.command.impl.CommandEvent;
 import com.jockie.bot.core.command.impl.CommandImpl;
 import com.jockie.bot.core.module.Module;
-import com.jsb.bot.command.CommandModlog.ModlogAction;
+import com.jsb.bot.database.Database;
 import com.jsb.bot.listener.ModlogListener;
+import com.jsb.bot.listener.MuteListener;
+import com.jsb.bot.modlog.Action;
 import com.jsb.bot.utility.ArgumentUtility;
+import com.jsb.bot.utility.TimeUtility;
+import com.mongodb.client.model.Projections;
+import com.mongodb.client.model.Updates;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild.Ban;
@@ -148,7 +159,7 @@ public class ModuleBasic {
 		@Command(value="user", aliases={"member"}, description="Prune a set amount of messages from a specified user")
 		@AuthorPermissions({Permission.MESSAGE_MANAGE})
 		@BotPermissions({Permission.MESSAGE_MANAGE, Permission.MESSAGE_HISTORY})
-		public void user(CommandEvent event, @Argument(value="member") String memberArgument, @Argument(value="amount", nullDefault=true) Integer amount) {
+		public void user(CommandEvent event, @Argument(value="user") String userArgument, @Argument(value="amount", nullDefault=true) Integer amount) {
 			int limit = amount == null ? 100 : amount;
 			
 			if (limit > 100) {
@@ -161,7 +172,7 @@ public class ModuleBasic {
 				return;
 			}
 			
-			Member member = ArgumentUtility.getMember(event.getGuild(), memberArgument);
+			Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
 			if (member == null) {
 				event.reply("I could not find that user :no_entry:").queue();
 				return;
@@ -332,8 +343,8 @@ public class ModuleBasic {
 	@Command(value="kick", description="Kick a user from the server")
 	@AuthorPermissions({Permission.KICK_MEMBERS})
 	@BotPermissions({Permission.KICK_MEMBERS})
-	public void kick(CommandEvent event, @Argument(value="member") String memberArgument, @Argument(value="reason", endless=true, nullDefault=true) String reason) {
-		Member member = ArgumentUtility.getMember(event.getGuild(), memberArgument);
+	public void kick(CommandEvent event, @Argument(value="user") String userArgument, @Argument(value="reason", endless=true, nullDefault=true) String reason) {
+		Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
 		if (member == null) {
 			event.reply("I could not find that user :no_entry:").queue();
 			return;
@@ -361,7 +372,7 @@ public class ModuleBasic {
 		
 		event.getGuild().kick(member).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue($ -> {
 			event.reply("**" + member.getUser().getAsTag() + "** has been kicked").queue();
-			ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, ModlogAction.KICK);
+			ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, Action.KICK);
 		});
 	}
 	
@@ -376,7 +387,7 @@ public class ModuleBasic {
 			
 			event.getGuild().ban(user, 1).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue($ -> {
 				event.reply("**" + user.getAsTag() + "** has been banned").queue();
-				ModlogListener.createModlog(event.getGuild(), event.getAuthor(), user, reason, false, ModlogAction.BAN);
+				ModlogListener.createModlog(event.getGuild(), event.getAuthor(), user, reason, false, Action.BAN);
 			});
 		});
 	}
@@ -439,7 +450,7 @@ public class ModuleBasic {
 				if (ban.getUser().equals(user)) {
 					event.getGuild().unban(user).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue($ -> {
 						event.reply("**" + user.getAsTag() + "** has been unbanned").queue();
-						ModlogListener.createModlog(event.getGuild(), event.getAuthor(), user, reason, false, ModlogAction.UNBAN);
+						ModlogListener.createModlog(event.getGuild(), event.getAuthor(), user, reason, false, Action.UNBAN);
 					});
 					
 					return;
@@ -482,11 +493,98 @@ public class ModuleBasic {
 		this.unbanUser(event, user, reason);
 	}
 	
+	@Command(value="mute", description="Mutes a user server wide")
+	@AuthorPermissions({Permission.MESSAGE_MANAGE})
+	public void mute(CommandEvent event, @Argument(value="user") String userArgument, @Argument(value="time") String timeString, @Argument(value="reason", endless=true, nullDefault=true) String reason) {
+		Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
+		if (member == null) {
+			event.reply("I could not find that user :no_entry:");
+			return;
+		}
+		
+		if (member.equals(event.getMember())) {
+			event.reply("You cannot mute yourself :no_entry:").queue();
+			return;
+		}
+		
+		if (member.equals(event.getSelfMember())) {
+			event.reply("I cannot mute myself :no_entry:").queue();
+			return;
+		}
+		
+		if (!event.getMember().canInteract(member)) {
+			event.reply("You cannot mute someone with a higher or equal top role than yours :no_entry:").queue();
+			return;
+		}
+		
+		if (member.hasPermission(Permission.ADMINISTRATOR)) {
+			event.reply("I cannot mute someone with administrator permissions :no_entry:").queue();
+			return;
+		}
+		
+		long muteLength;
+		try {
+			muteLength = TimeUtility.timeStringToSeconds(timeString);
+		} catch(IllegalArgumentException e) {
+			event.reply(e.getMessage() + " :no_entry:").queue();
+			return;
+		}
+		
+		MuteListener.getOrCreateMuteRole(event.getGuild(), (role, exception) -> {
+			if (!event.getSelfMember().canInteract(role)) {
+				event.reply("I cannot give a role which is higher or equal then my top role :no_entry:").queue();
+				return;
+			}
+			
+			if (member.getRoles().contains(role)) {
+				event.reply("That user is already muted :no_entry:").queue();
+				return;
+			}
+			
+			event.getGuild().addRoleToMember(member, role).queue($ -> {
+				Database.get().getGuildById(event.getGuild().getIdLong(), null, Projections.include("mute.users"), (data, readException) -> {
+					if (readException != null) {
+						readException.printStackTrace();
+						
+						event.reply("Something went wrong :no_entry:").queue();
+					} else {
+						List<Document> users = data.getEmbedded(List.of("mute", "users"), new ArrayList<>());
+						
+						Document muteData = new Document()
+								.append("length", muteLength)
+								.append("time", Clock.systemUTC().instant().getEpochSecond())
+								.append("id", member.getUser().getIdLong());
+						
+						users.add(muteData);
+						
+						Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("mute.users", users), (result, writeException) -> {
+							if (writeException != null) {
+								writeException.printStackTrace();
+								
+								event.reply("Something went wrong :no_entry:").queue();
+							} else {
+								event.reply("**" + member.getUser().getAsTag() + "** has been muted for some time here").queue();
+								
+								ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, Action.MUTE);
+								
+								ScheduledFuture<?> executor = MuteListener.scheduledExector.schedule(() -> {
+									MuteListener.unmuteUser(event.getShardManager(), event.getGuild().getIdLong(), member.getUser().getIdLong(), role.getIdLong());
+								}, muteLength, TimeUnit.SECONDS);
+								
+								MuteListener.putExecutor(event.getGuild().getIdLong(), member.getUser().getIdLong(), executor);
+							}
+						});
+					}
+				});
+			});
+		});
+	}
+	
 	@Command(value="voice kick", aliases={"voicekick", "disconnect", "dc"}, description="Disconnect a user from the voice channel they are currently in")
 	@AuthorPermissions({Permission.VOICE_MOVE_OTHERS})
 	@BotPermissions({Permission.VOICE_MOVE_OTHERS})
-	public void voiceKick(CommandEvent event, @Argument(value="member") String memberArgument, @Argument(value="reason", endless=true, nullDefault=true) String reason) {
-		Member member = ArgumentUtility.getMember(event.getGuild(), memberArgument);
+	public void voiceKick(CommandEvent event, @Argument(value="user") String userArgument, @Argument(value="reason", endless=true, nullDefault=true) String reason) {
+		Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
 		if (member == null) {
 			event.reply("I could not find that user :no_entry:").queue();
 			return;
@@ -505,15 +603,15 @@ public class ModuleBasic {
 		
 		event.getGuild().moveVoiceMember(member, null).queue($ -> {
 			event.reply("**" + member.getUser().getAsTag() + "** has been disconnected from " + channel.getName()).queue();
-			ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, ModlogAction.VOICE_KICK);
+			ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, Action.VOICE_KICK);
 		});
 	}
 	
 	@Command(value="rename", aliases={"nick", "nickname", "set nick", "setnick", "set nickname", "setnickname"}, description="Set a users nickname")
 	@AuthorPermissions({Permission.NICKNAME_CHANGE})
 	@BotPermissions({Permission.NICKNAME_MANAGE})
-	public void rename(CommandEvent event, @Argument(value="member") String memberArgument, @Argument(value="nickname", endless=true, nullDefault=true) String nickname) {
-		Member member = ArgumentUtility.getMember(event.getGuild(), memberArgument);
+	public void rename(CommandEvent event, @Argument(value="user") String userArgument, @Argument(value="nickname", endless=true, nullDefault=true) String nickname) {
+		Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
 		if (member == null) {
 			event.reply("I could not find that user :no_entry:").queue();
 			return;
@@ -549,8 +647,8 @@ public class ModuleBasic {
 	@Command(value="add role", aliases={"ar", "addrole"}, description="Add a role to a user")
 	@AuthorPermissions({Permission.MANAGE_ROLES})
 	@BotPermissions({Permission.MANAGE_ROLES})
-	public void addRole(CommandEvent event, @Argument(value="member") String memberArgument, @Argument(value="role", endless=true) String roleArgument) {
-		Member member = ArgumentUtility.getMember(event.getGuild(), memberArgument);
+	public void addRole(CommandEvent event, @Argument(value="user") String userArgument, @Argument(value="role", endless=true) String roleArgument) {
+		Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
 		if (member == null) {
 			event.reply("I could not find that user :no_entry:").queue();
 			return;
@@ -590,8 +688,8 @@ public class ModuleBasic {
 	@Command(value="remove role", aliases={"rr", "removerole"}, description="Remove a role to a user")
 	@AuthorPermissions({Permission.MANAGE_ROLES})
 	@BotPermissions({Permission.MANAGE_ROLES})
-	public void removeRole(CommandEvent event, @Argument(value="member") String memberArgument, @Argument(value="role", endless=true) String roleArgument) {
-		Member member = ArgumentUtility.getMember(event.getGuild(), memberArgument);
+	public void removeRole(CommandEvent event, @Argument(value="user") String userArgument, @Argument(value="role", endless=true) String roleArgument) {
+		Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
 		if (member == null) {
 			event.reply("I could not find that user :no_entry:").queue();
 			return;

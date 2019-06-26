@@ -10,8 +10,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.bson.Document;
 
-import com.jsb.bot.command.CommandModlog.ModlogAction;
 import com.jsb.bot.database.Database;
+import com.jsb.bot.modlog.Action;
 import com.mongodb.client.model.Projections;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -28,7 +28,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 public class ModlogListener extends ListenerAdapter {
 
-	public static void createModlog(Guild guild, User moderator, User user, String reason, boolean automatic, ModlogAction action) {
+	public static void createModlog(Guild guild, User moderator, User user, String reason, boolean automatic, Action action) {
 		Database.get().getGuildById(guild.getIdLong(), null, Projections.include("modlog.enabled", "modlog.channel", "modlog.disabledActions"), (data, readException) -> {
 			if (readException != null) {
 				readException.printStackTrace();
@@ -102,7 +102,7 @@ public class ModlogListener extends ListenerAdapter {
 				} 
 				
 				if (moderator != null && !moderator.equals(event.getJDA().getSelfUser())) {
-					ModlogListener.createModlog(event.getGuild(), moderator, event.getUser(), reason, false, ModlogAction.BAN);
+					ModlogListener.createModlog(event.getGuild(), moderator, event.getUser(), reason, false, Action.BAN);
 				}
 			});
 		}
@@ -124,7 +124,7 @@ public class ModlogListener extends ListenerAdapter {
 				System.out.println(moderator.getName() + " - " + reason);
 				
 				if (moderator != null && !moderator.equals(event.getJDA().getSelfUser())) {
-					ModlogListener.createModlog(event.getGuild(), moderator, event.getUser(), reason, false, ModlogAction.UNBAN);
+					ModlogListener.createModlog(event.getGuild(), moderator, event.getUser(), reason, false, Action.UNBAN);
 				}
 			});
 		}
@@ -144,7 +144,7 @@ public class ModlogListener extends ListenerAdapter {
 				} 
 				
 				if (moderator != null && !moderator.equals(event.getJDA().getSelfUser())) {
-					ModlogListener.createModlog(event.getGuild(), moderator, event.getUser(), reason, false, ModlogAction.KICK);
+					ModlogListener.createModlog(event.getGuild(), moderator, event.getUser(), reason, false, Action.KICK);
 				}
 			});
 		}

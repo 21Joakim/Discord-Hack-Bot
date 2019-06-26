@@ -35,8 +35,23 @@ public class CommandHelp extends CommandImpl {
 			}
 			
 			StringBuilder permissions = new StringBuilder();
-			for (Permission permission : command.getAuthorDiscordPermissions()) {
-				permissions.append("• " + permission.getName() + "\n");
+			for (int i = 0; i < command.getAuthorDiscordPermissions().size(); i++) {
+				Permission permission = command.getAuthorDiscordPermissions().get(i);
+				permissions.append(permission.getName());
+				
+				if (i != command.getAuthorDiscordPermissions().size() - 1) {
+					permissions.append(", ");
+				}
+			}
+			
+			StringBuilder subCommands = new StringBuilder();
+			for (int i = 0; i < command.getSubCommands().size(); i++) {
+				ICommand subCommand = command.getSubCommands().get(i);
+				subCommands.append(subCommand.getCommand());
+				
+				if (i != command.getSubCommands().size() - 1) {
+					subCommands.append(", ");
+				}
 			}
 		
 			EmbedBuilder embed = new EmbedBuilder();
@@ -46,6 +61,10 @@ public class CommandHelp extends CommandImpl {
 			
 			if (!command.getAuthorDiscordPermissions().isEmpty()) {
 				embed.addField("Required Permissions", permissions.toString(), false);
+			}
+			
+			if (!command.getSubCommands().isEmpty()) {
+				embed.addField("Sub Commands", subCommands.toString(), false);
 			}
 			
 			event.reply(embed.build()).queue();

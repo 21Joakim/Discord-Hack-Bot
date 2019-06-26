@@ -13,6 +13,7 @@ import com.jockie.bot.core.command.Command.BotPermissions;
 import com.jockie.bot.core.command.impl.CommandEvent;
 import com.jockie.bot.core.command.impl.CommandImpl;
 import com.jsb.bot.database.Database;
+import com.jsb.bot.modlog.Action;
 import com.jsb.bot.utility.ArgumentUtility;
 import com.jsb.bot.utility.MiscUtility;
 import com.mongodb.client.model.Projections;
@@ -91,33 +92,14 @@ public class CommandModlog extends CommandImpl {
 		});
 	}
 	
-	public enum ModlogAction {
-		BAN("Ban"),
-		UNBAN("Unban"),
-		KICK("Kick"),
-		MUTE("Mute"),
-		WARN("Warn"),
-		VOICE_KICK("Voice Kick");
-		
-		private String name;
-		
-		private ModlogAction(String name) {
-			this.name = name;
-		}
-		
-		public String getName() {
-			return this.name;
-		}
-	}
-	
 	@Command(value="toggle action", aliases={"toggleaction"}, description="Enable/disable whether an action should be logged or not")
 	@AuthorPermissions({Permission.MANAGE_SERVER})
 	public void toggleAction(CommandEvent event, @Argument(value="action") String actionArgument) {
-		ModlogAction action;
+		Action action;
 		try {
-			action = ModlogAction.valueOf(actionArgument.toUpperCase());
+			action = Action.valueOf(actionArgument.toUpperCase());
 		} catch(IllegalArgumentException e) {
-			event.reply("I could not find that action, valid actions are `" + MiscUtility.join(List.of(ModlogAction.values()), "`, `") + "` :no_entry:").queue();
+			event.reply("I could not find that action, valid actions are `" + MiscUtility.join(List.of(Action.values()), "`, `") + "` :no_entry:").queue();
 			return;
 		}
 		
@@ -283,7 +265,7 @@ public class CommandModlog extends CommandImpl {
 				
 				long createdAt = data.getLong("createdAt");
 				String reason = data.getString("reason");
-				ModlogAction action = ModlogAction.valueOf(data.getString("action"));
+				Action action = Action.valueOf(data.getString("action"));
 				
 				EmbedBuilder embed = new EmbedBuilder();
 				embed.setTitle("Case " + caseId + " | " + action.getName());
