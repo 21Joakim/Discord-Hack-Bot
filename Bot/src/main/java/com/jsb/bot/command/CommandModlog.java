@@ -144,7 +144,7 @@ public class CommandModlog extends CommandImpl {
 				}
 				
 				String currentReason = data.getString("reason");
-				Long moderatorId = data.getLong("moderator");
+				Long moderatorId = data.getLong("moderatorId");
 				Long messageId = data.getLong("messageId");
 				Long channelId = data.getLong("channelId");
 				
@@ -254,13 +254,13 @@ public class CommandModlog extends CommandImpl {
 					return;
 				}
 				
-				Long moderatorId = data.getLong("moderator");
+				Long moderatorId = data.getLong("moderatorId");
 				User moderator = null;
 				if (moderatorId != null) {
 					moderator = event.getShardManager().getUserById(moderatorId);
 				}
 				
-				long userId = data.getLong("user");
+				long userId = data.getLong("userId");
 				User user = event.getShardManager().getUserById(userId);
 				
 				long createdAt = data.getLong("createdAt");
