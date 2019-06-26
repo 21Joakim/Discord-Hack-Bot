@@ -1,11 +1,15 @@
 package com.jsb.bot.command;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.bson.Document;
 
 import com.jockie.bot.core.argument.Argument;
 import com.jockie.bot.core.command.Command;
 import com.jockie.bot.core.command.Command.AuthorPermissions;
+import com.jockie.bot.core.command.Command.BotPermissions;
 import com.jockie.bot.core.command.impl.CommandEvent;
 import com.jockie.bot.core.command.impl.CommandImpl;
 import com.jsb.bot.database.Database;
@@ -19,6 +23,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.MessageEmbed.Field;
 import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.User;
 
 public class CommandModlog extends CommandImpl {
 
@@ -151,9 +156,28 @@ public class CommandModlog extends CommandImpl {
 				
 				event.reply("Something went wrong :no_entry:").queue();
 			} else {
+				if (data == null) {
+					event.reply("I could not find that modlog case :no_entry:").queue();
+					return;
+				}
+				
 				String currentReason = data.getString("reason");
+				Long moderatorId = data.getLong("moderator");
 				Long messageId = data.getLong("messageId");
 				Long channelId = data.getLong("channelId");
+				
+				if (moderatorId == null) {
+					if (!event.getMember().hasPermission(Permission.MANAGE_SERVER)) {
+						event.reply("You need the `Manage Server` permission to edit an unowned modlog :no_entry:").queue();
+						return;
+					}
+				} else {
+					if (moderatorId != event.getAuthor().getIdLong()) {
+						event.reply("You cannot edit a modlog which you do not own :no_entry:").queue();
+						return;
+					}
+				}
+				
 				if (currentReason != null && reason.equals(currentReason)) {
 					event.reply("The reason is already set to that :no_entry:").queue();
 					return;
@@ -191,6 +215,117 @@ public class CommandModlog extends CommandImpl {
 						event.reply("Case **" + data.getLong("id") + "** has been updated").queue();
 					}
 				});
+			}
+		});
+	}
+	
+	@Command(value="remove", aliases={"delete"}, description="Delete a modlog case")
+	@AuthorPermissions({Permission.ADMINISTRATOR})
+	public void remove(CommandEvent event, @Argument(value="case id") int caseId) {
+		Database.get().getModlogCase(event.getGuild().getIdLong(), caseId, (data, readException) -> {
+			if (readException != null) {
+				readException.printStackTrace();
+				
+				event.reply("Something went wrong :no_entry:").queue();
+			} else {
+				if (data == null) {
+					event.reply("I could not find that modlog case :no_entry:").queue();
+					return;
+				}
+				
+				Long messageId = data.getLong("messageId");
+				Long channelId = data.getLong("channelId");
+				
+				if (channelId != null && messageId != null) {
+					TextChannel channel = event.getGuild().getTextChannelById(channelId);
+					if (channel != null) {
+						channel.retrieveMessageById(messageId).queue(message -> {
+							message.delete().queue();
+						}, e -> {});
+					}
+				}
+				
+				Database.get().deleteModlogCase(event.getGuild().getIdLong(), caseId, (result, writeException) -> {
+					if (writeException != null) {
+						writeException.printStackTrace();
+						
+						event.reply("Something went wrong :no_entry:").queue();
+					} else {
+						event.reply("Case **" + caseId + "** has been deleted").queue();
+					}
+				});
+			}
+		});
+	}
+	
+	@Command(value="view", description="View a modlog case in the current channel")
+	@AuthorPermissions({Permission.MANAGE_SERVER})
+	public void view(CommandEvent event, @Argument(value="case id") int caseId) {
+		Database.get().getModlogCase(event.getGuild().getIdLong(), caseId, (data, readException) -> {
+			if (readException != null) {
+				readException.printStackTrace();
+				
+				event.reply("Something went wrong :no_entry:").queue();
+			} else {
+				if (data == null) {
+					event.reply("I could not find that modlog case :no_entry:").queue();
+					return;
+				}
+				
+				Long moderatorId = data.getLong("moderator");
+				User moderator = null;
+				if (moderatorId != null) {
+					moderator = event.getShardManager().getUserById(moderatorId);
+				}
+				
+				long userId = data.getLong("user");
+				User user = event.getShardManager().getUserById(userId);
+				
+				long createdAt = data.getLong("createdAt");
+				String reason = data.getString("reason");
+				ModlogAction action = ModlogAction.valueOf(data.getString("action"));
+				
+				EmbedBuilder embed = new EmbedBuilder();
+				embed.setTitle("Case " + caseId + " | " + action.getName());
+				embed.setTimestamp(Instant.ofEpochSecond(createdAt));
+				embed.addField("Moderator", moderator == null ? moderatorId == null ? "Unknown" : "Unknown user (" + moderatorId + ")" : moderator.getAsTag() + " (" + moderatorId + ")", false);
+				embed.addField("User", user == null ? "Unknown user (" + userId + ")" : user.getAsTag() + " (" + userId + ")", false);
+				embed.addField("Reason", reason == null ? "None Given" : reason, false);
+				
+				event.reply(embed.build()).queue();
+			}
+		});
+	}
+	
+	@Command(value="settings", description="View the servers current modlog settings")
+	@BotPermissions({Permission.MESSAGE_EMBED_LINKS})
+	public void settings(CommandEvent event) {
+		Database.get().getGuildById(event.getGuild().getIdLong(), null, Projections.include("modlog.enabled", "modlog.disabledActions", "modlog.channel"), (data, readException) -> {
+			if (readException != null) {
+				readException.printStackTrace();
+				
+				event.reply("Something went wrong :no_entry:").queue();
+			} else {
+				Document document = data.getEmbedded(List.of("modlog"), new Document());
+				List<String> disabledActions = document.getList("disabledActions", String.class);
+				boolean enabled = document.getBoolean("enabled", false);
+				
+				TextChannel channel = null;
+				Long channelId = document.getLong("channel");
+				if (channelId != null) {
+					channel = event.getGuild().getTextChannelById(channelId);
+				}
+				
+				EmbedBuilder embed = new EmbedBuilder();
+				embed.setAuthor("Modlog Settings", null, event.getGuild().getIconUrl());
+				embed.addField("Status", enabled ? "Enabled" : "Disabled", true);
+				embed.addField("Channel", channel == null ? "Not Set" : channel.getAsMention(), true);
+				
+				if (disabledActions != null && !disabledActions.isEmpty()) {
+					embed.addField("Disabled Actions", "`" + MiscUtility.join(disabledActions, "`\n`") + "`", false);
+				}
+				
+				event.reply(embed.build()).queue();
 			}
 		});
 	}
