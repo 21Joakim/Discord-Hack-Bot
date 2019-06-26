@@ -32,8 +32,11 @@ public enum LoggerType {
 	ROLE_UPDATE_PERMISSIONS(Category.ROLE),
 	// ROLE_UPDATE_POSITION(Category.ROLE)
 	
+	/** {@link LoggerListener#onEmoteAdded(net.dv8tion.jda.api.events.emote.EmoteAddedEvent)} */
 	EMOTE_CREATE(Category.EMOTE),
+	/** {@link LoggerListener#onEmoteRemoved(net.dv8tion.jda.api.events.emote.EmoteRemovedEvent)} */
 	EMOTE_DELETE(Category.EMOTE),
+	/** {@link LoggerListener#onEmoteUpdateName(net.dv8tion.jda.api.events.emote.update.EmoteUpdateNameEvent)} */
 	EMOTE_UPDATE_NAME(Category.EMOTE),
 	EMOTE_UPDATE_ROLES(Category.EMOTE),
 	

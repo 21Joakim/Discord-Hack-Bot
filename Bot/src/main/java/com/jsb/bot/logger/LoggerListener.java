@@ -18,6 +18,10 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.audit.ActionType;
 import net.dv8tion.jda.api.audit.AuditLogEntry;
 import net.dv8tion.jda.api.audit.AuditLogKey;
+import net.dv8tion.jda.api.events.emote.EmoteAddedEvent;
+import net.dv8tion.jda.api.events.emote.EmoteRemovedEvent;
+import net.dv8tion.jda.api.events.emote.update.EmoteUpdateNameEvent;
+import net.dv8tion.jda.api.events.emote.update.EmoteUpdateRolesEvent;
 import net.dv8tion.jda.api.events.guild.GuildBanEvent;
 import net.dv8tion.jda.api.events.guild.GuildUnbanEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
@@ -546,4 +550,107 @@ public class LoggerListener extends ListenerAdapter {
 			}
 		});
 	}
+	
+	public void onEmoteAdded(EmoteAddedEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.EMOTE_CREATE);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The emote %s has been created", event.getEmote().getAsMention()));
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setFooter(String.format("Emote ID: %s", event.getEmote().getId()));
+			embed.setColor(LoggerListener.COLOR_GREEN);
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.EMOTE_CREATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getTargetIdLong() == event.getEmote().getIdLong())
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.EMOTE_CREATE, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.EMOTE_CREATE, embed.build());
+			}
+		});
+	}
+	
+	public void onEmoteRemoved(EmoteRemovedEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.EMOTE_DELETE);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The emote `%s` has been deleted", event.getEmote().getAsMention()));
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setFooter(String.format("Emote ID: %s", event.getEmote().getId()));
+			embed.setColor(LoggerListener.COLOR_RED);
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.EMOTE_DELETE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getTargetIdLong() == event.getEmote().getIdLong())
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.EMOTE_DELETE, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.EMOTE_DELETE, embed.build());
+			}
+		});
+	}
+	
+	public void onEmoteUpdateName(EmoteUpdateNameEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.EMOTE_UPDATE_NAME);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The emote %s has been renamed from `%s` to `%s`", event.getEmote().getAsMention(), event.getOldName(), event.getNewName()));
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setFooter(String.format("Emote ID: %s", event.getEmote().getId()));
+			embed.setColor(LoggerListener.COLOR_ORANGE);
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.EMOTE_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.EMOTE_NAME) != null)
+						.filter(e -> e.getTargetIdLong() == event.getEmote().getIdLong())
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.EMOTE_UPDATE_NAME, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.EMOTE_UPDATE_NAME, embed.build());
+			}
+		});
+	}
+	
+	/* TODO: Implement */
+	public void onEmoteUpdateRoles(EmoteUpdateRolesEvent event) {}
 }
