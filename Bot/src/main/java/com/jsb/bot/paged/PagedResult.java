@@ -31,7 +31,7 @@ public class PagedResult<Type> {
 	
 	private List<? extends Type> entries;
 	
-	private Function<? super Type, String> displayFunction;
+	private Function<? super Type, String> displayFunction = object -> object.toString();
 	
 	private String seperator = " - ";
 	

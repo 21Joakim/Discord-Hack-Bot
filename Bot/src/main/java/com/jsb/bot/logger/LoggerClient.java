@@ -100,7 +100,7 @@ class LoggerClient {
 		
 		for(Document event : enabledEvents) {
 			if(event.getString("type").equalsIgnoreCase(type.toString())) {
-				enabled = false;
+				enabled = true;
 				enabledEvent = event;
 			}
 		}
@@ -151,11 +151,26 @@ class LoggerClient {
 					return;
 				}
 				
+				/* Remove logger if the channel no longer exists */
+				if(request.getGuild().getTextChannelById(logger.getLong("channelId")) == null) {
+					deque.addFirst(request);
+					
+					Database.get().updateGuildById(request.guildId, Updates.pull("logger.loggers", new Document("channelId", logger.getLong("channelId"))), (update, exception) -> {
+						if(exception != null) {
+							exception.printStackTrace();
+						}
+						
+						this.handleQueue(deque, retries + 1);
+					});
+					
+					return;
+				}
+				
 				List<WebhookEmbed> embeds = new ArrayList<>(request.embeds);
+				List<Request> uncapable = new ArrayList<>();
 				
 				int totalLength = MiscUtility.getWebhookEmbedLength(embeds);
 				
-				List<Request> uncapable = new ArrayList<>();
 				while(totalLength < MessageEmbed.EMBED_MAX_LENGTH_BOT && embeds.size() < 10) {
 					Request anotherRequest = deque.poll();
 					if(anotherRequest == null) {
