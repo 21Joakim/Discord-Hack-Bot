@@ -21,7 +21,9 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Indexes;
+import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 
 public class Database {
@@ -85,7 +87,7 @@ public class Database {
 	}
 	
 	public long getModlogCasesAmountFromGuild(long guildId) {
-		return this.modlogCases.countDocuments(Filters.eq("guildId", guildId));
+		return this.getModlogCasesFromGuild(guildId).sort(Sorts.descending("id")).first().getLong("id");
 	}
 	
 	public FindIterable<Document> getModlogCasesFromGuild(long guildId) {
@@ -101,6 +103,20 @@ public class Database {
 			try {
 				callback.onResult(this.getModlogCase(guildId, id), null);
 			}catch(Throwable e) {
+				callback.onResult(null, e);
+			}
+		});
+	}
+	
+	public DeleteResult deleteModlogCase(long guildId, int id) {
+		return this.modlogCases.deleteOne(Filters.and(Filters.eq("guildId", guildId), Filters.eq("id", id)));
+	}
+	
+	public void deleteModlogCase(long guildId, int id, Callback<DeleteResult> callback) {
+		this.queryExecutor.submit(() -> {
+			try {
+				callback.onResult(this.deleteModlogCase(guildId, id), null);
+			} catch(Throwable e) {
 				callback.onResult(null, e);
 			}
 		});

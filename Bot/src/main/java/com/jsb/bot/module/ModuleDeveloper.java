@@ -24,7 +24,7 @@ public class ModuleDeveloper {
 		}
 		
 		return new JSONObject()
-				.put("command", useCommandTrigger ? command.getCommandTrigger() : command.getCommand())
+				.put("name", useCommandTrigger ? command.getCommandTrigger() : command.getCommand())
 				.put("description", command.getDescription())
 				.put("usage", command.getUsage())
 				.put("aliases", command.getAliases())
