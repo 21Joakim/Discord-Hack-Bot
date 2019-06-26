@@ -87,7 +87,9 @@ public class Database {
 	}
 	
 	public long getModlogCasesAmountFromGuild(long guildId) {
-		return this.getModlogCasesFromGuild(guildId).sort(Sorts.descending("id")).first().getLong("id");
+		Document modlogCase = this.getModlogCasesFromGuild(guildId).sort(Sorts.descending("id")).first();
+		
+		return modlogCase != null ? modlogCase.getLong("id") : 0;
 	}
 	
 	public FindIterable<Document> getModlogCasesFromGuild(long guildId) {

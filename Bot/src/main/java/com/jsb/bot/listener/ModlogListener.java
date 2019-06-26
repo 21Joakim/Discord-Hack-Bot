@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -36,7 +37,7 @@ public class ModlogListener extends ListenerAdapter {
 				Document modlogData = data.getEmbedded(List.of("modlog"), new Document());
 				boolean enabled = modlogData.getBoolean("enabled", false);
 				if (enabled) {
-					List<String> disabledActions = modlogData.getList("disabledActions", String.class);
+					List<String> disabledActions = modlogData.getList("disabledActions", String.class, Collections.emptyList());
 					if (!disabledActions.contains(action.toString())) {
 						long caseId = Database.get().getModlogCasesAmountFromGuild(guild.getIdLong()) + 1;
 						TextChannel channel = guild.getTextChannelById(modlogData.getLong("channel"));
