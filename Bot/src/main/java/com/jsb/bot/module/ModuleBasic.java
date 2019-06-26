@@ -6,12 +6,17 @@ import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 
 import org.bson.Document;
 
@@ -32,6 +37,7 @@ import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Updates;
 
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Guild.Ban;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -46,6 +52,58 @@ import net.dv8tion.jda.api.requests.ErrorResponse;
 
 @Module
 public class ModuleBasic {
+	
+	public static final Pattern TEMPLATE_PATTERN = Pattern.compile("t(|emplate):[a-z0-9_-]+", Pattern.CASE_INSENSITIVE);
+	
+	public static void getReason(Guild guild, String reason, Consumer<String> consumer) {
+		if(reason == null) {
+			consumer.accept(null);
+			
+			return;
+		}
+		
+		Matcher matcher = ModuleBasic.TEMPLATE_PATTERN.matcher(reason);
+		List<String> foundTemplates = new ArrayList<>();
+		
+		while(matcher.find()) {
+			foundTemplates.add(matcher.group());
+		}
+		
+		if(foundTemplates.size() > 0) {
+			Database.get().getGuildById(guild.getIdLong(), null, Projections.include("template.reasons"), (document, exception) -> {
+				/* 
+				 * In case this fails we will just silently pass through and pretend like nothing happened 
+				 * to avoid the user not being able to use the command 
+				 */
+				if(exception != null) {
+					exception.printStackTrace();
+					
+					consumer.accept(reason);
+					
+					return;
+				}
+				
+				String newReason = reason;
+				
+				List<Document> templates = document.getEmbedded(List.of("template", "reasons"), Collections.emptyList());
+				Map<String, String> templateMap = templates.stream().collect(Collectors.toMap(t -> t.getString("name").toLowerCase(), t -> t.getString("template")));
+				
+				for(String template : foundTemplates) {
+					String templateKey = template.substring(template.indexOf(":") + 1).toLowerCase();
+					
+					if(templateMap.containsKey(templateKey)) {
+						newReason = newReason.replace(template, templateMap.get(templateKey));
+					}
+				}
+				
+				consumer.accept(newReason);
+			});
+			
+			return;
+		}
+		
+		consumer.accept(reason);
+	}
 	
 	@Command(description="Shows my ping to Discord")
 	public void ping(CommandEvent event) {
@@ -370,9 +428,12 @@ public class ModuleBasic {
 			return;
 		}
 		
-		event.getGuild().kick(member).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue($ -> {
-			event.reply("**" + member.getUser().getAsTag() + "** has been kicked").queue();
-			ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, Action.KICK);
+		ModuleBasic.getReason(event.getGuild(), reason, templatedReason -> {
+			event.getGuild().kick(member).reason((templatedReason == null ? "" : templatedReason) + " [" + event.getAuthor().getAsTag() + "]").queue($ -> {
+				event.reply("**" + member.getUser().getAsTag() + "** has been kicked").queue();
+				
+				ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), templatedReason, false, Action.KICK);
+			});
 		});
 	}
 	
@@ -385,9 +446,12 @@ public class ModuleBasic {
 				}
 			}
 			
-			event.getGuild().ban(user, 1).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue($ -> {
-				event.reply("**" + user.getAsTag() + "** has been banned").queue();
-				ModlogListener.createModlog(event.getGuild(), event.getAuthor(), user, reason, false, Action.BAN);
+			ModuleBasic.getReason(event.getGuild(), reason, templatedReason -> {
+				event.getGuild().ban(user, 1).reason((templatedReason == null ? "" : templatedReason) + " [" + event.getAuthor().getAsTag() + "]").queue($ -> {
+					event.reply("**" + user.getAsTag() + "** has been banned").queue();
+					
+					ModlogListener.createModlog(event.getGuild(), event.getAuthor(), user, templatedReason, false, Action.BAN);
+				});
 			});
 		});
 	}
@@ -448,9 +512,12 @@ public class ModuleBasic {
 		event.getGuild().retrieveBanList().queue(bans -> {
 			for (Ban ban : bans) {
 				if (ban.getUser().equals(user)) {
-					event.getGuild().unban(user).reason((reason == null ? "" : reason) + " [" + event.getAuthor().getAsTag() + "]").queue($ -> {
-						event.reply("**" + user.getAsTag() + "** has been unbanned").queue();
-						ModlogListener.createModlog(event.getGuild(), event.getAuthor(), user, reason, false, Action.UNBAN);
+					ModuleBasic.getReason(event.getGuild(), reason, templatedReason -> {
+						event.getGuild().unban(user).reason((templatedReason == null ? "" : templatedReason) + " [" + event.getAuthor().getAsTag() + "]").queue($ -> {
+							event.reply("**" + user.getAsTag() + "** has been unbanned").queue();
+							
+							ModlogListener.createModlog(event.getGuild(), event.getAuthor(), user, templatedReason, false, Action.UNBAN);
+						});
 					});
 					
 					return;
@@ -566,13 +633,15 @@ public class ModuleBasic {
 							} else {
 								event.reply("**" + member.getUser().getAsTag() + "** has been muted for some time here").queue();
 								
-								ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, Action.MUTE);
-								
-								ScheduledFuture<?> executor = MuteListener.scheduledExector.schedule(() -> {
-									MuteListener.unmuteUser(event.getShardManager(), event.getGuild().getIdLong(), member.getUser().getIdLong(), role.getIdLong());
-								}, muteLength, TimeUnit.SECONDS);
-								
-								MuteListener.putExecutor(event.getGuild().getIdLong(), member.getUser().getIdLong(), executor);
+								ModuleBasic.getReason(event.getGuild(), reason, templatedReason -> {
+									ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), templatedReason, false, Action.MUTE);
+									
+									ScheduledFuture<?> executor = MuteListener.scheduledExector.schedule(() -> {
+										MuteListener.unmuteUser(event.getShardManager(), event.getGuild().getIdLong(), member.getUser().getIdLong(), role.getIdLong());
+									}, muteLength, TimeUnit.SECONDS);
+									
+									MuteListener.putExecutor(event.getGuild().getIdLong(), member.getUser().getIdLong(), executor);
+								});
 							}
 						});
 					}
@@ -631,9 +700,11 @@ public class ModuleBasic {
 							event.getGuild().removeRoleFromMember(member, muteRole).queue($ -> {
 								event.reply("**" + member.getUser().getAsTag() + "** has been unmuted").queue();
 								
-								ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, Action.UNMUTE);
-								
-								MuteListener.removeExecutor(event.getGuild().getIdLong(), member.getIdLong());
+								ModuleBasic.getReason(event.getGuild(), reason, templatedReason -> {
+									ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), templatedReason, false, Action.UNMUTE);
+									
+									MuteListener.removeExecutor(event.getGuild().getIdLong(), member.getIdLong());
+								});
 							});
 						}
 					});
@@ -665,7 +736,10 @@ public class ModuleBasic {
 		
 		event.getGuild().moveVoiceMember(member, null).queue($ -> {
 			event.reply("**" + member.getUser().getAsTag() + "** has been disconnected from " + channel.getName()).queue();
-			ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, Action.VOICE_KICK);
+			
+			ModuleBasic.getReason(event.getGuild(), reason, templatedReason -> {
+				ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), templatedReason, false, Action.VOICE_KICK);
+			});
 		});
 	}
 	
