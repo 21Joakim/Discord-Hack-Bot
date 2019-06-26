@@ -495,6 +495,7 @@ public class ModuleBasic {
 	
 	@Command(value="mute", description="Mutes a user server wide")
 	@AuthorPermissions({Permission.MESSAGE_MANAGE})
+	@BotPermissions({Permission.MANAGE_ROLES})
 	public void mute(CommandEvent event, @Argument(value="user") String userArgument, @Argument(value="time") String timeString, @Argument(value="reason", endless=true, nullDefault=true) String reason) {
 		Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
 		if (member == null) {
@@ -577,6 +578,67 @@ public class ModuleBasic {
 					}
 				});
 			});
+		});
+	}
+	
+	@Command(value="unmute", description="Unmute a user who is currently muted")
+	@AuthorPermissions({Permission.MESSAGE_MANAGE})
+	@BotPermissions({Permission.MANAGE_ROLES})
+	public void unmute(CommandEvent event, @Argument(value="user") String userArgument, @Argument(value="reason", endless=true, nullDefault=true) String reason) {
+		Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
+		if (member == null) {
+			event.reply("I could not find that user :no_entry:");
+			return;
+		}
+		
+		if (!event.getMember().canInteract(member)) {
+			event.reply("You cannot unmute someone with a higher or equal top role than yours :no_entry:").queue();
+			return;
+		}
+		
+		Database.get().getGuildById(event.getGuild().getIdLong(), null, Projections.include("mute.role", "mute.users"), (data, readException) -> {
+			if (readException != null) {
+				readException.printStackTrace();
+				
+				event.reply("Something went wrong :no_entry:").queue();
+			} else {
+				Document muteData = data.get("mute", Document.class);
+				List<Document> users = muteData.getList("users", Document.class);
+				long muteRoleId = muteData.getLong("role");
+				
+				Role muteRole = event.getGuild().getRoleById(muteRoleId);
+				if (muteRole == null) {
+					event.reply("That user is not muted :no_entry:").queue();
+				} else {
+					if (!member.getRoles().contains(muteRole)) {
+						event.reply("That user is not muted :no_entry:").queue();
+						return;
+					}
+					
+					for (Document user : users) {
+						if (member.getIdLong() == user.getLong("id")) {
+							users.remove(user);
+							break;
+						}
+					}
+					
+					Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("mute.users", users), (result, writeException) -> {
+						if (writeException != null) {
+							writeException.printStackTrace();
+							
+							event.reply("Something went wrong :no_entry:").queue();
+						} else {
+							event.getGuild().removeRoleFromMember(member, muteRole).queue($ -> {
+								event.reply("**" + member.getUser().getAsTag() + "** has been unmuted").queue();
+								
+								ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, Action.UNMUTE);
+								
+								MuteListener.removeExecutor(event.getGuild().getIdLong(), member.getIdLong());
+							});
+						}
+					});
+				}
+			}
 		});
 	}
 	
