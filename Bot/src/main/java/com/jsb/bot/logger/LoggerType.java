@@ -6,8 +6,9 @@ public enum LoggerType {
 	/** {@link LoggerListener#onGuildMemberLeave(net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent)} */
 	MEMBER_LEAVE(Category.MEMBER),
 	/** {@link LoggerListener#onGuildBan(net.dv8tion.jda.api.events.guild.GuildBanEvent)} */
-	MEMBER_BANNED(Category.MEMBER),
-	MEMBER_UNBANNED(Category.MEMBER),
+	MEMBER_BAN(Category.MEMBER),
+	/** {@link LoggerListener#onGuildUnban(net.dv8tion.jda.api.events.guild.GuildUnbanEvent)} */
+	MEMBER_UNBAN(Category.MEMBER),
 	/** {@link LoggerListener#onGuildMemberUpdateNickname(net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateNicknameEvent)} */
 	MEMBER_NICKNAME_CHANGE(Category.MEMBER),
 	/** {@link LoggerListener#onGuildMemberRoleAdd(net.dv8tion.jda.api.events.guild.member.GuildMemberRoleAddEvent)} */
@@ -15,12 +16,19 @@ public enum LoggerType {
 	/** {@link LoggerListener#onGuildMemberRoleRemove(net.dv8tion.jda.api.events.guild.member.GuildMemberRoleRemoveEvent)} */
 	MEMBER_ROLE_REMOVE(Category.MEMBER),
 	
+	/** {@link LoggerListener#onRoleCreate(net.dv8tion.jda.api.events.role.RoleCreateEvent)} */
 	ROLE_CREATE(Category.ROLE),
+	/** {@link LoggerListener#onRoleDelete(net.dv8tion.jda.api.events.role.RoleDeleteEvent)} */
 	ROLE_DELETE(Category.ROLE),
+	/** {@link LoggerListener#onRoleUpdateColor(net.dv8tion.jda.api.events.role.update.RoleUpdateColorEvent)} */
 	ROLE_UPDATE_COLOR(Category.ROLE),
+	/** {@link LoggerListener#onRoleUpdateHoisted(net.dv8tion.jda.api.events.role.update.RoleUpdateHoistedEvent)} */
 	ROLE_UPDATE_HOISTED(Category.ROLE),
+	/** {@link LoggerListener#onRoleUpdateMentionable(net.dv8tion.jda.api.events.role.update.RoleUpdateMentionableEvent)} */
 	ROLE_UPDATE_MENTIONABLE(Category.ROLE),
+	/** {@link LoggerListener#onRoleUpdateName(net.dv8tion.jda.api.events.role.update.RoleUpdateNameEvent)} */
 	ROLE_UPDATE_NAME(Category.ROLE),
+	/** {@link LoggerListener#onRoleUpdatePermissions(net.dv8tion.jda.api.events.role.update.RoleUpdatePermissionsEvent)} */
 	ROLE_UPDATE_PERMISSIONS(Category.ROLE),
 	// ROLE_UPDATE_POSITION(Category.ROLE)
 	
