@@ -1,4 +1,4 @@
-package com.jsb.bot.listener;
+package com.jsb.bot.modlog;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 import org.bson.Document;
 
 import com.jsb.bot.database.Database;
-import com.jsb.bot.modlog.Action;
 import com.mongodb.client.model.Projections;
 
 import net.dv8tion.jda.api.EmbedBuilder;

@@ -9,8 +9,9 @@ import org.json.JSONObject;
 import com.jockie.bot.core.command.impl.CommandListener;
 import com.jockie.bot.core.command.impl.CommandStore;
 import com.jsb.bot.database.Database;
-import com.jsb.bot.listener.ModlogListener;
 import com.jsb.bot.logger.LoggerListener;
+import com.jsb.bot.modlog.ModlogListener;
+import com.jsb.bot.mute.MuteListener;
 import com.jsb.bot.paged.PagedManager;
 
 import net.dv8tion.jda.api.JDA;
@@ -40,7 +41,7 @@ public class JSBBot {
 			.setDefaultPrefixes("!");
 		
 		ShardManager shardManager = new DefaultShardManagerBuilder(JSBBot.config.getString("token"))
-			.addEventListeners(listener, PagedManager.get(), new LoggerListener(), new ModlogListener())
+			.addEventListeners(listener, PagedManager.get(), new LoggerListener(), new ModlogListener(), new MuteListener())
 			.build();
 		
 		for(JDA shard : shardManager.getShards()) {
