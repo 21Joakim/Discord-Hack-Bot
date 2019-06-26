@@ -2,6 +2,7 @@ package com.jsb.bot.logger;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,6 +22,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import com.jsb.bot.database.Database;
+import com.jsb.bot.utility.MiscUtility;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.UpdateOptions;
@@ -32,6 +34,7 @@ import club.minnced.discord.webhook.send.WebhookEmbed;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.TextChannel;
 import okhttp3.OkHttpClient;
 
@@ -80,6 +83,41 @@ class LoggerClient {
 	private OkHttpClient webhookClient = new OkHttpClient();
 	private ScheduledExecutorService webhookScheduler = Executors.newSingleThreadScheduledExecutor();
 	
+	public boolean isLoggerCapable(Document logger, LoggerType type) {
+		return this.isLoggerCapable(logger, type, null);
+	}
+	
+	public boolean isLoggerCapable(Document logger, LoggerType type, Predicate<Document> predicate) {
+		if(!logger.getBoolean("enabled", true)) {
+			return false;
+		}
+		
+		List<Document> enabledEvents = logger.getList("enabledEvents", Document.class, Collections.emptyList());
+		List<Document> disabledEvents = logger.getList("disabledEvents", Document.class, Collections.emptyList());
+		
+		boolean enabled = enabledEvents.size() == 0;
+		Document enabledEvent = Database.EMPTY_DOCUMENT;
+		
+		for(Document event : enabledEvents) {
+			if(event.getString("type").equalsIgnoreCase(type.toString())) {
+				enabled = false;
+				enabledEvent = event;
+			}
+		}
+		
+		for(Document event : disabledEvents) {
+			if(event.getString("type").equalsIgnoreCase(type.toString())) {
+				enabled = false;
+			}
+		}
+		
+		if(enabled && (predicate == null || predicate.test(enabledEvent))) {
+			return true;
+		}
+		
+		return false;
+	}
+	
 	public Document getLogger(Guild guild, LoggerType type) {
 		return this.getLogger(guild, type, null);
 	}
@@ -88,30 +126,7 @@ class LoggerClient {
 		Document document = Database.get().getGuildById(guild.getIdLong(), null, Projections.include("logger.loggers"));
 		List<Document> loggers = document.getEmbedded(List.of("logger", "loggers"), Collections.emptyList());
 		for(Document logger : loggers) {
-			if(!logger.getBoolean("enabled", true)) {
-				continue;
-			}
-			
-			List<Document> enabledEvents = logger.getList("enabledEvents", Document.class, Collections.emptyList());
-			List<Document> disabledEvents = logger.getList("disabledEvents", Document.class, Collections.emptyList());
-			
-			boolean enabled = enabledEvents.size() == 0;
-			Document enabledEvent = Database.EMPTY_DOCUMENT;
-			
-			for(Document event : enabledEvents) {
-				if(event.getString("type").equalsIgnoreCase(type.toString())) {
-					enabled = false;
-					enabledEvent = event;
-				}
-			}
-			
-			for(Document event : disabledEvents) {
-				if(event.getString("type").equalsIgnoreCase(type.toString())) {
-					enabled = false;
-				}
-			}
-			
-			if(enabled && (predicate == null || predicate.test(enabledEvent))) {
+			if(this.isLoggerCapable(logger, type, predicate)) {
 				return logger;
 			}
 		}
@@ -136,6 +151,45 @@ class LoggerClient {
 					return;
 				}
 				
+				List<WebhookEmbed> embeds = new ArrayList<>(request.embeds);
+				
+				int totalLength = MiscUtility.getWebhookEmbedLength(embeds);
+				
+				List<Request> uncapable = new ArrayList<>();
+				while(totalLength < MessageEmbed.EMBED_MAX_LENGTH_BOT && embeds.size() < 10) {
+					Request anotherRequest = deque.poll();
+					if(anotherRequest == null) {
+						break;
+					}
+					
+					if(embeds.size() + anotherRequest.embeds.size() > 10) {
+						uncapable.add(request);
+						
+						break;
+					}
+					
+					int length = MiscUtility.getWebhookEmbedLength(anotherRequest.embeds);
+					
+					if(totalLength + length <= MessageEmbed.EMBED_MAX_LENGTH_BOT) {
+						if(this.isLoggerCapable(logger, anotherRequest.type)) {
+							embeds.addAll(anotherRequest.embeds);
+							totalLength += length;
+						}else{
+							uncapable.add(request);
+						}
+					}else{
+						uncapable.add(request);
+						
+						break;
+					}
+				}
+				
+				if(uncapable.size() > 0) {
+					for(Request wrongTypeRequest : uncapable) {
+						deque.addFirst(wrongTypeRequest);
+					}
+				}
+				
 				WebhookClient client = this.webhooks.computeIfAbsent(logger.getLong("webhookId"), id -> {
 					return new WebhookClientBuilder(id, logger.getString("webhookToken"))
 						.setHttpClient(this.webhookClient)
@@ -143,7 +197,7 @@ class LoggerClient {
 						.build();
 				});
 				
-				client.send(request.embeds)
+				client.send(embeds)
 					.thenRun(() -> {
 						this.handleQueue(deque, 0);
 					})

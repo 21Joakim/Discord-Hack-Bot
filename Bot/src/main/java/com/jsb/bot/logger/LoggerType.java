@@ -1,5 +1,7 @@
 package com.jsb.bot.logger;
 
+import java.util.EnumSet;
+
 public enum LoggerType {
 	/** {@link LoggerListener#onGuildMemberJoin(net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent)} */
 	MEMBER_JOIN(Category.MEMBER),
@@ -108,13 +110,27 @@ public enum LoggerType {
 		STORE_CHANNEL;
 	}
 	
-	private Category[] categories;
+	private EnumSet<Category> categories;
 	
 	private LoggerType(Category... categories) {
-		this.categories = categories;
+		this.categories = categories.length > 0
+			? EnumSet.of(categories[0], categories)
+			: EnumSet.noneOf(Category.class);
 	}
 	
-	public Category[] getCategories() {
+	public EnumSet<Category> getCategories() {
 		return this.categories;
+	}
+	
+	public static EnumSet<LoggerType> getByCategory(Category category) {
+		EnumSet<LoggerType> types = EnumSet.noneOf(LoggerType.class);
+		
+		for(LoggerType type : LoggerType.values()) {
+			if(type.categories.contains(category)) {
+				types.add(type);
+			}
+		}
+		
+		return types;
 	}
 }
