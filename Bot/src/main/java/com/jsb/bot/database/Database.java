@@ -45,7 +45,7 @@ public class Database {
 	private MongoCollection<Document> modlogCases;
 	
 	private Database() {
-		JSONObject mongodb = JSBBot.config.getJSONObject("mongodb");
+		JSONObject mongodb = JSBBot.getConfig("mongodb");
 		
 		MongoClientSettings.Builder settings = MongoClientSettings.builder()
 			.applyToClusterSettings(builder -> {

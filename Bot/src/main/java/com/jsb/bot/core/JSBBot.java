@@ -13,6 +13,7 @@ import com.jsb.bot.logger.LoggerListener;
 import com.jsb.bot.modlog.ModlogListener;
 import com.jsb.bot.mute.MuteListener;
 import com.jsb.bot.paged.PagedManager;
+import com.jsb.server.Webserver;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
@@ -20,7 +21,9 @@ import net.dv8tion.jda.api.sharding.ShardManager;
 
 public class JSBBot {
 	
-	public static JSONObject config;
+	private static JSONObject config;
+	
+	private static ShardManager shardManager;
 	
 	public static void main(String[] args) throws Exception {
 		try(FileInputStream stream = new FileInputStream(new File("./config/config.json"))) {
@@ -30,6 +33,14 @@ public class JSBBot {
 		/* Connect to the database */
 		Database.get();
 		
+		if(JSBBot.getConfig("webserver.enabled", false)) {
+			System.out.println("Starting webserver...");
+			
+			Webserver.start();
+			
+			System.out.println("Started webserver!");
+		}
+		
 		Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
 			throwable.printStackTrace();
 		});
@@ -38,16 +49,58 @@ public class JSBBot {
 			.addCommandStore(CommandStore.of("com.jsb.bot.command"))
 			.addCommandStore(CommandStore.of("com.jsb.bot.module"))
 			.addDevelopers(281465397214052352L, 190551803669118976L, 402557516728369153L)
-			.setDefaultPrefixes("!");
+			.setDefaultPrefixes(JSBBot.config.getJSONArray("prefixes").toList().toArray(new String[0]));
 		
 		ShardManager shardManager = new DefaultShardManagerBuilder(JSBBot.config.getString("token"))
 			.addEventListeners(listener, PagedManager.get(), new LoggerListener(), new ModlogListener(), new MuteListener())
 			.build();
+		
+		JSBBot.shardManager = shardManager;
 		
 		for(JDA shard : shardManager.getShards()) {
 			shard.awaitReady();
 		}
 		
 		System.out.println(String.format("Started %s with %,d guilds", shardManager.getShards().get(0).getSelfUser().getAsTag(), shardManager.getGuilds().size()));
+	}
+	
+	public static ShardManager getShardManager() {
+		return JSBBot.shardManager;
+	}
+	
+	public static JSONObject getConfig() {
+		return JSBBot.config;
+	}
+	
+	public static <T> T getConfig(String path) {
+		return getConfig(path, (T) null);
+	}
+	
+	public static <T> T getConfig(String path, Class<T> clazz) {
+		return getConfig(path, (T) null);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <T> T getConfig(String path, T defaultValue) {
+		String[] splitPath = path.split("\\.");
+		
+		JSONObject position = JSBBot.config;
+		for(int i = 0; i < splitPath.length; i++) {
+			Object value = position.opt(splitPath[i]);
+			
+			if(value == null) {
+				return defaultValue;
+			}
+			
+			if(value instanceof JSONObject) {
+				position = (JSONObject) value;
+			}
+			
+			if(i == splitPath.length - 1) {
+				return (T) value;
+			}
+		}
+		
+		return defaultValue;
 	}
 }
