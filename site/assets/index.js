@@ -1,3 +1,10 @@
+if(location.hash) {
+  addSelection();
+}
+window.onhashchange = function() {
+  addSelection();
+}
+
 let __navList = document.getElementsByClassName("navListWrapper")[0];
 let title = document.title.split("|")[1].replace(/\s/g, '');
 for (let i = 0; i < __navList.children.length; i++) {
@@ -32,4 +39,21 @@ function showNav() {
 
 function showProfileHolder(x) {
   x.parentElement.children[1].classList.toggle("show");
+}
+
+function addSelection() {
+  let val = location.hash.replace("#", "");
+  if(location.hash) {
+    let __def = document.getElementById("defaultContent");
+    if(__def) {
+      __def.style = "display:none;"
+    }
+
+    document.querySelectorAll(`[select="${val}"]`).forEach(x => {
+      x.classList.add("selected")
+    })
+    document.querySelectorAll(`[select]:not([select="${val}"]`).forEach(x => {
+      x.classList.remove("selected");
+    })
+  }
 }

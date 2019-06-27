@@ -3,12 +3,6 @@ let commands = [{"categoryName":"cat1","commands":[{"name":"com1","aliases":["co
 
 //triggers
 addCategoryList();
-if(location.hash) {
-  addSelection();
-}
-window.onhashchange = function() {
-  addSelection();
-}
 
 //functions
 function addCategoryList() {
@@ -51,101 +45,12 @@ function addCommands(x) {
     __a.setAttribute("href", `#${x[i].name}`);
     __a.innerText = x[i].name;
 
-    //__command.setAttribute("onclick", `showProperties(this)`)
     __command.appendChild(__a);
 
-    arr.push(__command/*, addChildren(x[i].subCommands)*/);
+    arr.push(__command);
   }
   return arr;
 }
-
-/*
-function addChildren(x) {
-  let __catChildren = createDivAndClass("ul", ["categoryChildren"]);
-  let arr2 = []; 
-  for(let i = 0; i < x.length; i++) {
-    let __catChild = createDivAndClass("li", ["categoryChild"]);
-    let __a = document.createElement("a");
-
-    __a.setAttribute("href", `#${x[i].name}`)
-    __a.innerText = x[i].name;
-
-    __catChild.setAttribute("id", `${x[i].name}`)
-    __catChild.appendChild(__a);
-    
-    arr2.push(__catChild);
-  } 
-  appendChildren(__catChildren, arr2);
-  return __catChildren;
-}
-
-
-function showProperties(x) {
-  x.classList.toggle("selected");
-  let arr = document.getElementsByClassName("categoryParent");
-  for(let i = 0; i < arr.length; i++) {
-    if(arr[i] != x) {
-      arr[i].classList.remove("selected");
-    }
-  }
-}
-*/
-
-function appendChildren(x, arr) {
-  arr.forEach(y => {
-    x.appendChild(y);
-  })
-}
-
-function createDivAndClass(type, classname, att) {
-  let __element = document.createElement(type);
-  if(classname) {
-    __element.classList.add(...classname);
-  }
-
-  if(att) {
-    __element.setAttribute("command", att);
-  }
-  return __element;
-}
-
-function addSelection() {
-  let val = location.hash.replace("#", "");
-  if(location.hash) {
-    document.getElementById("defaultContent").style = "display:none;";
-
-    document.querySelectorAll(`[command="${val}"]`).forEach(x => {
-      x.classList.add("selected")
-    })
-    document.querySelectorAll(`[command]:not([command="${val}"]`).forEach(x => {
-      x.classList.remove("selected");
-    })
-  }
-}
-
-/*
-<div category="something">
-  <h1 class="categoryTitle big" style="margin-top:0;">Command Command(s)</h1>
-  <h2 class="categoryTitle">Main</h2>
-    <div class="tableContainer">
-      <table>
-        <caption>Command Structure</caption>
-        <tr>
-          <th>name</th>
-          <th>description</th>
-          <th>usage</th>
-          <th>alias</th>
-        </tr>
-        <tr>
-          <td>prune</td>
-          <td>Prune a set amount of messages with various filters</td>
-          <td>prune &#x3C;amount&#x3E;*</td>
-          <td>delete, remove</td>
-        </tr>
-      </table>
-    </div>
-</div>
-*/
 
 function addCommandsDiv(x, y) {
   let arr = [];
@@ -155,7 +60,7 @@ function addCommandsDiv(x, y) {
     let __categoryHolder = createDivAndClass("div", ["categoryHolder"], y[i].name);
 
     let __title = createDivAndClass("h1", ["categoryTitle", "big"]);
-    __title.innerText = y[i].name + " command(s)";
+    __title.innerText = y[i].name + " commands";
     __title.style = "margin-top:0;"
 
     let __title2 = createDivAndClass("h2", ["categoryTitle"]);
@@ -220,11 +125,5 @@ function createTable(x, sub) {
   __tableContainer.appendChild(__table);
 
   return __tableContainer;
-}
-
-function createElmWtext(type, text) {
-  let __elm = document.createElement(type);
-  __elm.innerText = text;
-  return __elm;
 }
 
