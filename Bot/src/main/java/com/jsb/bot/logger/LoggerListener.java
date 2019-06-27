@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.audit.AuditLogEntry;
 import net.dv8tion.jda.api.audit.AuditLogKey;
 import net.dv8tion.jda.api.entities.Category;
 import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Guild.MFALevel;
 import net.dv8tion.jda.api.entities.GuildChannel;
 import net.dv8tion.jda.api.entities.IMentionable;
@@ -65,6 +66,9 @@ import net.dv8tion.jda.api.events.guild.update.GuildUpdateRegionEvent;
 import net.dv8tion.jda.api.events.guild.update.GuildUpdateSplashEvent;
 import net.dv8tion.jda.api.events.guild.update.GuildUpdateSystemChannelEvent;
 import net.dv8tion.jda.api.events.guild.update.GuildUpdateVerificationLevelEvent;
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceGuildDeafenEvent;
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceGuildMuteEvent;
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.events.role.RoleCreateEvent;
 import net.dv8tion.jda.api.events.role.RoleDeleteEvent;
@@ -113,6 +117,16 @@ public class LoggerListener extends ListenerAdapter {
 		}
 		
 		return builder.toString();
+	}
+	
+	private String getType(GuildChannel channel) {
+		if(channel.getType().equals(ChannelType.CATEGORY)) {
+			return "category";
+		}else if(channel.getType().equals(ChannelType.UNKNOWN)) {
+			return "unknown channel";
+		}
+		
+		return channel.getType().toString().toLowerCase() + " channel";
 	}
 	
 	public void onGuildMemberJoin(GuildMemberJoinEvent event) {
@@ -933,7 +947,7 @@ public class LoggerListener extends ListenerAdapter {
 		
 		this.delay(() -> {
 			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
-			embed.setDescription(String.format("The server ownership has been transferred from %s to %s", event.getOldOwner().getUser().getAsMention(), event.getNewOwner().getUser().getAsMention()));
+			embed.setDescription(String.format("The server ownership has been transferred from **%s** to **%s**", event.getOldOwner().getUser().getAsTag(), event.getNewOwner().getUser().getAsTag()));
 			embed.setColor(LoggerListener.COLOR_ORANGE);
 			embed.setTimestamp(ZonedDateTime.now());
 			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
@@ -1093,16 +1107,6 @@ public class LoggerListener extends ListenerAdapter {
 		});
 	}
 	
-	private String getType(GuildChannel channel) {
-		if(channel.getType().equals(ChannelType.CATEGORY)) {
-			return "category";
-		}else if(channel.getType().equals(ChannelType.UNKNOWN)) {
-			return "unknown channel";
-		}
-		
-		return channel.getType().toString().toLowerCase() + " channel";
-	}
-	
 	public void onChannelCreate(GuildChannel channel, LoggerType type) {
 		Document logger = LoggerClient.get().getLogger(channel.getGuild(), type);
 		if(logger == null) {
@@ -1161,7 +1165,7 @@ public class LoggerListener extends ListenerAdapter {
 		this.delay(() -> {
 			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
 			embed.setDescription(String.format("The " + this.getType(channel) + " `%s` has been deleted", channel.getName()));
-			embed.setColor(LoggerListener.COLOR_GREEN);
+			embed.setColor(LoggerListener.COLOR_RED);
 			embed.setTimestamp(ZonedDateTime.now());
 			embed.setAuthor(channel.getGuild().getName(), channel.getGuild().getIconUrl());
 			embed.setFooter(String.format("%s ID: %s", channel.getType().equals(ChannelType.CATEGORY) ? "Category" : "Channel", channel.getId()));
@@ -1210,7 +1214,7 @@ public class LoggerListener extends ListenerAdapter {
 		this.delay(() -> {
 			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
 			embed.setDescription(String.format("The name of the " + this.getType(channel) + " %s has been changed from `%s` to `%s`", (channel instanceof IMentionable ? ((IMentionable) channel).getAsMention() : "`" + channel.getName() + "`"), before, after));
-			embed.setColor(LoggerListener.COLOR_GREEN);
+			embed.setColor(LoggerListener.COLOR_ORANGE);
 			embed.setTimestamp(ZonedDateTime.now());
 			embed.setAuthor(channel.getGuild().getName(), channel.getGuild().getIconUrl());
 			embed.setFooter(String.format("%s ID: %s", channel.getType().equals(ChannelType.CATEGORY) ? "Category" : "Channel", channel.getId()));
@@ -1260,7 +1264,7 @@ public class LoggerListener extends ListenerAdapter {
 		this.delay(() -> {
 			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
 			embed.setDescription(String.format("The parent of the " + this.getType(channel) + " %s has been changed from `%s` to `%s`", (channel instanceof IMentionable ? ((IMentionable) channel).getAsMention() : "`" + channel.getName() + "`"), before.getName(), after.getName()));
-			embed.setColor(LoggerListener.COLOR_GREEN);
+			embed.setColor(LoggerListener.COLOR_ORANGE);
 			embed.setTimestamp(ZonedDateTime.now());
 			embed.setAuthor(channel.getGuild().getName(), channel.getGuild().getIconUrl());
 			embed.setFooter(String.format("Channel ID: %s", channel.getId()));
@@ -1302,7 +1306,7 @@ public class LoggerListener extends ListenerAdapter {
 		this.delay(() -> {
 			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
 			embed.setDescription(String.format("The text channel %s is %s NSFW", event.getChannel().getAsMention(), event.getNewValue() ? "now" : "no longer"));
-			embed.setColor(LoggerListener.COLOR_GREEN);
+			embed.setColor(LoggerListener.COLOR_ORANGE);
 			embed.setTimestamp(ZonedDateTime.now());
 			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
 			embed.setFooter(String.format("Channel ID: %s", event.getChannel().getId()));
@@ -1336,7 +1340,7 @@ public class LoggerListener extends ListenerAdapter {
 		this.delay(() -> {
 			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
 			embed.setDescription(String.format("The slowmode of the text channel %s has been changed from `%s` seconds to `%s`", event.getChannel().getAsMention(), event.getOldSlowmode(), event.getNewSlowmode()));
-			embed.setColor(LoggerListener.COLOR_GREEN);
+			embed.setColor(LoggerListener.COLOR_ORANGE);
 			embed.setTimestamp(ZonedDateTime.now());
 			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
 			embed.setFooter(String.format("Channel ID: %s", event.getChannel().getId()));
@@ -1378,7 +1382,7 @@ public class LoggerListener extends ListenerAdapter {
 				embed.setDescription(String.format("The topic of the text channel %s has been changed from `%s` to `%s`", event.getChannel().getAsMention(), event.getOldTopic(), event.getNewTopic()));
 			}
 			
-			embed.setColor(LoggerListener.COLOR_GREEN);
+			embed.setColor(LoggerListener.COLOR_ORANGE);
 			embed.setTimestamp(ZonedDateTime.now());
 			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
 			embed.setFooter(String.format("Channel ID: %s", event.getChannel().getId()));
@@ -1412,7 +1416,7 @@ public class LoggerListener extends ListenerAdapter {
 		this.delay(() -> {
 			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
 			embed.setDescription(String.format("The bitrate of the voice channel `%s` has been changed from `%s` to `%s`", event.getChannel().getName(), event.getOldBitrate(), event.getNewBitrate()));
-			embed.setColor(LoggerListener.COLOR_GREEN);
+			embed.setColor(LoggerListener.COLOR_ORANGE);
 			embed.setTimestamp(ZonedDateTime.now());
 			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
 			embed.setFooter(String.format("Channel ID: %s", event.getChannel().getId()));
@@ -1446,7 +1450,7 @@ public class LoggerListener extends ListenerAdapter {
 		this.delay(() -> {
 			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
 			embed.setDescription(String.format("The user limit of the voice channel `%s` has been changed from `%s` to `%s`", event.getChannel().getName(), event.getOldUserLimit(), event.getNewUserLimit()));
-			embed.setColor(LoggerListener.COLOR_GREEN);
+			embed.setColor(LoggerListener.COLOR_ORANGE);
 			embed.setTimestamp(ZonedDateTime.now());
 			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
 			embed.setFooter(String.format("Channel ID: %s", event.getChannel().getId()));
@@ -1468,6 +1472,116 @@ public class LoggerListener extends ListenerAdapter {
 			}else{
 				LoggerClient.get().queue(event.getGuild(), LoggerType.VOICE_CHANNEL_UPDATE_USER_LIMIT, embed.build());
 			}
+		});
+	}
+	
+	public void onGuildVoiceGuildDeafen(GuildVoiceGuildDeafenEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.VOICE_DEAFEN);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("**%s** has been %sdeafened", event.getMember().getUser().getAsTag(), event.isGuildDeafened() ? "" : "un"));
+			
+			if(event.isGuildDeafened()) {
+				embed.setColor(LoggerListener.COLOR_RED);
+			}else{
+				embed.setColor(LoggerListener.COLOR_GREEN);
+			}
+
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			embed.setFooter(String.format("User ID: %s", event.getMember().getId()));
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.MEMBER_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.MEMBER_DEAF) != null)
+						.filter(e -> e.getTargetIdLong() == event.getMember().getIdLong())
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.VOICE_DEAFEN, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.VOICE_DEAFEN, embed.build());
+			}
+		});
+	}
+	
+	public void onGuildVoiceGuildMute(GuildVoiceGuildMuteEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.VOICE_MUTE);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("**%s** has been %smuted", event.getMember().getUser().getAsTag(), event.isGuildMuted() ? "" : "un"));
+			
+			if(event.isGuildMuted()) {
+				embed.setColor(LoggerListener.COLOR_RED);
+			}else{
+				embed.setColor(LoggerListener.COLOR_GREEN);
+			}
+			
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			embed.setFooter(String.format("User ID: %s", event.getMember().getId()));
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.MEMBER_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.MEMBER_MUTE) != null)
+						.filter(e -> e.getTargetIdLong() == event.getMember().getIdLong())
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.VOICE_MUTE, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.VOICE_MUTE, embed.build());
+			}
+		});
+	}
+	
+	public void onGuildVoiceUpdate(GuildVoiceUpdateEvent event) {
+		Guild guild = event.getEntity().getGuild();
+		
+		Document logger = LoggerClient.get().getLogger(guild, LoggerType.VOICE_MEMBER_CHANGE_CHANNEL);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			
+			if(event.getChannelJoined() == null) {
+				embed.setDescription(String.format("**%s** has left `%s`", event.getEntity().getUser().getAsTag(), event.getChannelLeft().getName()));
+				embed.setColor(LoggerListener.COLOR_RED);
+			}else if(event.getChannelLeft() == null) {
+				embed.setDescription(String.format("**%s** has joined `%s`", event.getEntity().getUser().getAsTag(), event.getChannelJoined().getName()));
+				embed.setColor(LoggerListener.COLOR_GREEN);
+			}else{
+				embed.setDescription(String.format("**%s** has moved from `%s` to `%s`", event.getEntity().getUser().getAsTag(), event.getChannelLeft().getName(), event.getChannelJoined().getName()));
+				embed.setColor(LoggerListener.COLOR_ORANGE);
+			}
+			
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(guild.getName(), guild.getIconUrl());
+			embed.setFooter(String.format("User ID: %s", event.getEntity().getId()));
+			
+			LoggerClient.get().queue(guild, LoggerType.VOICE_MEMBER_CHANGE_CHANNEL, embed.build());
 		});
 	}
 	

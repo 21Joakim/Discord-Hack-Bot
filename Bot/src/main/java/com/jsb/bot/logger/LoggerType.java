@@ -117,12 +117,12 @@ public enum LoggerType {
 	// CATEGORY_CHANNEL_UPDATE_PERMISSIONS(Category.CATEGORY_CHANNEL, Category.CHANNEL),
 	// CATEGORY_CHANNEL_UPDATE_POSITION(Category.CATEGORY_CHANNEL, Category.CHANNEL)
 	
+	/** {@link LoggerListener#onGuildVoiceGuildDeafen(net.dv8tion.jda.api.events.guild.voice.GuildVoiceGuildDeafenEvent)} */
 	VOICE_DEAFEN(Category.VOICE),
+	/** {@link LoggerListener#onGuildVoiceGuildMute(net.dv8tion.jda.api.events.guild.voice.GuildVoiceGuildMuteEvent)} */
 	VOICE_MUTE(Category.VOICE),
-	VOICE_JOIN(Category.VOICE),
-	VOICE_LEAVE(Category.VOICE),
-	VOICE_MOVE(Category.VOICE),
-	VOICE_SUPRESS(Category.VOICE),
+	/** {@link LoggerListener#onGuildVoiceUpdate(net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent)} */
+	VOICE_MEMBER_CHANGE_CHANNEL(Category.VOICE),
 	
 	/** {@link LoggerListener#onGuildMessageReceived(net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent)} */
 	MESSAGE_RECEIVE(Category.MESSAGE), // Used for testing
