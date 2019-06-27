@@ -29,6 +29,7 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRoleAddEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRoleRemoveEvent;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateNicknameEvent;
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.events.role.RoleCreateEvent;
 import net.dv8tion.jda.api.events.role.RoleDeleteEvent;
 import net.dv8tion.jda.api.events.role.update.RoleUpdateColorEvent;
@@ -135,6 +136,7 @@ public class LoggerListener extends ListenerAdapter {
 				event.getGuild().retrieveAuditLogs().type(ActionType.MEMBER_ROLE_UPDATE).queue(logs -> {
 					AuditLogEntry entry = logs.stream()
 						.filter(e -> e.getTargetIdLong() == event.getUser().getIdLong())
+						.filter(e -> e.getChangeByKey(AuditLogKey.MEMBER_ROLES_ADD) != null)
 						.filter(e -> {
 							List<String> roleIds = ((List<Map<String, String>>) e.getChangeByKey(AuditLogKey.MEMBER_ROLES_ADD).getNewValue())
 								.stream()
@@ -180,6 +182,7 @@ public class LoggerListener extends ListenerAdapter {
 				event.getGuild().retrieveAuditLogs().type(ActionType.MEMBER_ROLE_UPDATE).queue(logs -> {
 					AuditLogEntry entry = logs.stream()
 						.filter(e -> e.getTargetIdLong() == event.getUser().getIdLong())
+						.filter(e -> e.getChangeByKey(AuditLogKey.MEMBER_ROLES_REMOVE) != null)
 						.filter(e -> {
 							List<String> roleIds = ((List<Map<String, String>>) e.getChangeByKey(AuditLogKey.MEMBER_ROLES_REMOVE).getNewValue())
 								.stream()
@@ -653,4 +656,44 @@ public class LoggerListener extends ListenerAdapter {
 	
 	/* TODO: Implement */
 	public void onEmoteUpdateRoles(EmoteUpdateRolesEvent event) {}
+	
+	/*
+	public void onGuildUpdateAfkChannel(GuildUpdateAfkChannelEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.GUILD_UPDATE_AFK_CHANNEL);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("A message was sent by **%s**", event.getAuthor().getAsTag()));
+			embed.setColor(LoggerListener.COLOR_GREEN);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getMember().getEffectiveName(), event.getAuthor().getEffectiveAvatarUrl());
+			embed.setFooter(String.format("User ID: %s", event.getAuthor().getId()));
+			embed.addField("Content", event.getMessage().getContentRaw(), true);
+			
+			LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_AFK_CHANNEL, embed.build());
+		});
+	}
+	*/
+	
+	public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MESSAGE_);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("A message was sent by **%s**", event.getAuthor().getAsTag()));
+			embed.setColor(LoggerListener.COLOR_GREEN);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getMember().getEffectiveName(), event.getAuthor().getEffectiveAvatarUrl());
+			embed.setFooter(String.format("User ID: %s", event.getAuthor().getId()));
+			embed.addField("Content", event.getMessage().getContentRaw(), true);
+			
+			LoggerClient.get().queue(event.getGuild(), LoggerType.MESSAGE_, embed.build());
+		});
+	}
 }
