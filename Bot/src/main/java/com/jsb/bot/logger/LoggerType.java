@@ -73,23 +73,30 @@ public enum LoggerType {
 	TEXT_CHANNEL_DELETE(Category.TEXT_CHANNEL, Category.CHANNEL),
 	/** {@link LoggerListener#onTextChannelUpdateName(net.dv8tion.jda.api.events.channel.text.update.TextChannelUpdateNameEvent)} */
 	TEXT_CHANNEL_UPDATE_NAME(Category.TEXT_CHANNEL, Category.CHANNEL),
+	/** {@link LoggerListener#onTextChannelUpdateNSFW(net.dv8tion.jda.api.events.channel.text.update.TextChannelUpdateNSFWEvent)} */
 	TEXT_CHANNEL_UPDATE_NSFW(Category.TEXT_CHANNEL, Category.CHANNEL),
+	/** {@link LoggerListener#onTextChannelUpdateParent(net.dv8tion.jda.api.events.channel.text.update.TextChannelUpdateParentEvent)} */
 	TEXT_CHANNEL_UPDATE_PARENT(Category.TEXT_CHANNEL, Category.CHANNEL),
 	// TEXT_CHANNEL_UPDATE_PERMISSIONS(Category.TEXT_CHANNEL, Category.CHANNEL),
 	// TEXT_CHANNEL_UPDATE_POSITION(Category.TEXT_CHANNEL, Category.CHANNEL),
+	/** {@link LoggerListener#onTextChannelUpdateSlowmode(net.dv8tion.jda.api.events.channel.text.update.TextChannelUpdateSlowmodeEvent)} */
 	TEXT_CHANNEL_UPDATE_SLOWMODE(Category.TEXT_CHANNEL, Category.CHANNEL),
+	/** {@link LoggerListener#onTextChannelUpdateTopic(net.dv8tion.jda.api.events.channel.text.update.TextChannelUpdateTopicEvent)} */
 	TEXT_CHANNEL_UPDATE_TOPIC(Category.TEXT_CHANNEL, Category.CHANNEL),
 	
 	/** {@link LoggerListener#onVoiceChannelCreate(net.dv8tion.jda.api.events.channel.voice.VoiceChannelCreateEvent)} */
 	VOICE_CHANNEL_CREATE(Category.VOICE_CHANNEL, Category.CHANNEL),
 	/** {@link LoggerListener#onVoiceChannelDelete(net.dv8tion.jda.api.events.channel.voice.VoiceChannelDeleteEvent)} */
 	VOICE_CHANNEL_DELETE(Category.VOICE_CHANNEL, Category.CHANNEL),
+	/** {@link LoggerListener#onVoiceChannelUpdateBitrate(net.dv8tion.jda.api.events.channel.voice.update.VoiceChannelUpdateBitrateEvent)} */
 	VOICE_CHANNEL_UPDATE_BITRATE(Category.VOICE_CHANNEL, Category.CHANNEL),
 	/** {@link LoggerListener#onVoiceChannelUpdateName(net.dv8tion.jda.api.events.channel.voice.update.VoiceChannelUpdateNameEvent)} */
 	VOICE_CHANNEL_UPDATE_NAME(Category.VOICE_CHANNEL, Category.CHANNEL),
+	/** {@link LoggerListener#onVoiceChannelUpdateParent(net.dv8tion.jda.api.events.channel.voice.update.VoiceChannelUpdateParentEvent)} */
 	VOICE_CHANNEL_UPDATE_PARENT(Category.VOICE_CHANNEL, Category.CHANNEL),
 	// VOICE_CHANNEL_UPDATE_PERMISSIONS(Category.VOICE_CHANNEL, Category.CHANNEL),
 	// VOICE_CHANNEL_UPDATE_POSITION(Category.VOICE_CHANNEL, Category.CHANNEL),
+	/** {@link LoggerListener#onVoiceChannelUpdateUserLimit(net.dv8tion.jda.api.events.channel.voice.update.VoiceChannelUpdateUserLimitEvent)} */
 	VOICE_CHANNEL_UPDATE_USER_LIMIT(Category.VOICE_CHANNEL, Category.CHANNEL),
 	
 	/** {@link LoggerListener#onStoreChannelCreate(net.dv8tion.jda.api.events.channel.store.StoreChannelCreateEvent)} */

@@ -18,10 +18,11 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.audit.ActionType;
 import net.dv8tion.jda.api.audit.AuditLogEntry;
 import net.dv8tion.jda.api.audit.AuditLogKey;
+import net.dv8tion.jda.api.entities.Category;
 import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.Guild.MFALevel;
 import net.dv8tion.jda.api.entities.GuildChannel;
 import net.dv8tion.jda.api.entities.IMentionable;
-import net.dv8tion.jda.api.entities.Guild.MFALevel;
 import net.dv8tion.jda.api.events.channel.category.CategoryCreateEvent;
 import net.dv8tion.jda.api.events.channel.category.CategoryDeleteEvent;
 import net.dv8tion.jda.api.events.channel.category.update.CategoryUpdateNameEvent;
@@ -30,10 +31,17 @@ import net.dv8tion.jda.api.events.channel.store.StoreChannelDeleteEvent;
 import net.dv8tion.jda.api.events.channel.store.update.StoreChannelUpdateNameEvent;
 import net.dv8tion.jda.api.events.channel.text.TextChannelCreateEvent;
 import net.dv8tion.jda.api.events.channel.text.TextChannelDeleteEvent;
+import net.dv8tion.jda.api.events.channel.text.update.TextChannelUpdateNSFWEvent;
 import net.dv8tion.jda.api.events.channel.text.update.TextChannelUpdateNameEvent;
+import net.dv8tion.jda.api.events.channel.text.update.TextChannelUpdateParentEvent;
+import net.dv8tion.jda.api.events.channel.text.update.TextChannelUpdateSlowmodeEvent;
+import net.dv8tion.jda.api.events.channel.text.update.TextChannelUpdateTopicEvent;
 import net.dv8tion.jda.api.events.channel.voice.VoiceChannelCreateEvent;
 import net.dv8tion.jda.api.events.channel.voice.VoiceChannelDeleteEvent;
+import net.dv8tion.jda.api.events.channel.voice.update.VoiceChannelUpdateBitrateEvent;
 import net.dv8tion.jda.api.events.channel.voice.update.VoiceChannelUpdateNameEvent;
+import net.dv8tion.jda.api.events.channel.voice.update.VoiceChannelUpdateParentEvent;
+import net.dv8tion.jda.api.events.channel.voice.update.VoiceChannelUpdateUserLimitEvent;
 import net.dv8tion.jda.api.events.emote.EmoteAddedEvent;
 import net.dv8tion.jda.api.events.emote.EmoteRemovedEvent;
 import net.dv8tion.jda.api.events.emote.update.EmoteUpdateNameEvent;
@@ -1241,6 +1249,226 @@ public class LoggerListener extends ListenerAdapter {
 	
 	public void onCategoryUpdateName(CategoryUpdateNameEvent event) {
 		this.onChannelUpdateName(event.getCategory(), event.getOldName(), event.getNewName(), LoggerType.CATEGORY_CHANNEL_UPDATE_NAME);
+	}
+	
+	public void onChannelUpdateParent(GuildChannel channel, Category before, Category after, LoggerType type) {
+		Document logger = LoggerClient.get().getLogger(channel.getGuild(), type);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The parent of the " + this.getType(channel) + " %s has been changed from `%s` to `%s`", (channel instanceof IMentionable ? ((IMentionable) channel).getAsMention() : "`" + channel.getName() + "`"), before.getName(), after.getName()));
+			embed.setColor(LoggerListener.COLOR_GREEN);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(channel.getGuild().getName(), channel.getGuild().getIconUrl());
+			embed.setFooter(String.format("Channel ID: %s", channel.getId()));
+			
+			if(channel.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				channel.getGuild().retrieveAuditLogs().type(ActionType.CHANNEL_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.CHANNEL_PARENT) != null)
+						.filter(e -> e.getTargetIdLong() == channel.getIdLong())
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(channel.getGuild(), type, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(channel.getGuild(), type, embed.build());
+			}
+		});
+	}
+	
+	public void onTextChannelUpdateParent(TextChannelUpdateParentEvent event) {
+		this.onChannelUpdateParent(event.getChannel(), event.getOldParent(), event.getNewParent(), LoggerType.TEXT_CHANNEL_UPDATE_PARENT);
+	}
+	
+	public void onVoiceChannelUpdateParent(VoiceChannelUpdateParentEvent event) {
+		this.onChannelUpdateParent(event.getChannel(), event.getOldParent(), event.getNewParent(), LoggerType.VOICE_CHANNEL_UPDATE_PARENT);
+	}
+	
+	public void onTextChannelUpdateNSFW(TextChannelUpdateNSFWEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.TEXT_CHANNEL_UPDATE_NSFW);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The text channel %s is %s NSFW", event.getChannel().getAsMention(), event.getNewValue() ? "now" : "no longer"));
+			embed.setColor(LoggerListener.COLOR_GREEN);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			embed.setFooter(String.format("Channel ID: %s", event.getChannel().getId()));
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.CHANNEL_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.CHANNEL_NSFW) != null)
+						.filter(e -> e.getTargetIdLong() == event.getChannel().getIdLong())
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.TEXT_CHANNEL_UPDATE_NSFW, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.TEXT_CHANNEL_UPDATE_NSFW, embed.build());
+			}
+		});
+	}
+	
+	public void onTextChannelUpdateSlowmode(TextChannelUpdateSlowmodeEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.TEXT_CHANNEL_UPDATE_SLOWMODE);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The slowmode of the text channel %s has been changed from `%s` seconds to `%s`", event.getChannel().getAsMention(), event.getOldSlowmode(), event.getNewSlowmode()));
+			embed.setColor(LoggerListener.COLOR_GREEN);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			embed.setFooter(String.format("Channel ID: %s", event.getChannel().getId()));
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.CHANNEL_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.CHANNEL_SLOWMODE) != null)
+						.filter(e -> e.getTargetIdLong() == event.getChannel().getIdLong())
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.TEXT_CHANNEL_UPDATE_SLOWMODE, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.TEXT_CHANNEL_UPDATE_SLOWMODE, embed.build());
+			}
+		});
+	}
+	
+	public void onTextChannelUpdateTopic(TextChannelUpdateTopicEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.TEXT_CHANNEL_UPDATE_TOPIC);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			
+			if(event.getOldTopic() == null || event.getOldTopic().isEmpty()) {
+				embed.setDescription(String.format("The topic of the text channel %s has been set to `%s`", event.getChannel().getAsMention(), event.getNewTopic()));
+			}else if(event.getNewTopic() == null || event.getNewTopic().isEmpty()) {
+				embed.setDescription(String.format("The topic of the text channel %s [`%s`] has been removed", event.getChannel().getAsMention(), event.getOldTopic()));
+			}else{
+				embed.setDescription(String.format("The topic of the text channel %s has been changed from `%s` to `%s`", event.getChannel().getAsMention(), event.getOldTopic(), event.getNewTopic()));
+			}
+			
+			embed.setColor(LoggerListener.COLOR_GREEN);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			embed.setFooter(String.format("Channel ID: %s", event.getChannel().getId()));
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.CHANNEL_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.CHANNEL_TOPIC) != null)
+						.filter(e -> e.getTargetIdLong() == event.getChannel().getIdLong())
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.TEXT_CHANNEL_UPDATE_TOPIC, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.TEXT_CHANNEL_UPDATE_TOPIC, embed.build());
+			}
+		});
+	}
+	
+	public void onVoiceChannelUpdateBitrate(VoiceChannelUpdateBitrateEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.VOICE_CHANNEL_UPDATE_BITRATE);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The bitrate of the voice channel `%s` has been changed from `%s` to `%s`", event.getChannel().getName(), event.getOldBitrate(), event.getNewBitrate()));
+			embed.setColor(LoggerListener.COLOR_GREEN);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			embed.setFooter(String.format("Channel ID: %s", event.getChannel().getId()));
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.CHANNEL_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.CHANNEL_BITRATE) != null)
+						.filter(e -> e.getTargetIdLong() == event.getChannel().getIdLong())
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.VOICE_CHANNEL_UPDATE_BITRATE, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.VOICE_CHANNEL_UPDATE_BITRATE, embed.build());
+			}
+		});
+	}
+	
+	public void onVoiceChannelUpdateUserLimit(VoiceChannelUpdateUserLimitEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.VOICE_CHANNEL_UPDATE_USER_LIMIT);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The user limit of the voice channel `%s` has been changed from `%s` to `%s`", event.getChannel().getName(), event.getOldUserLimit(), event.getNewUserLimit()));
+			embed.setColor(LoggerListener.COLOR_GREEN);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			embed.setFooter(String.format("Channel ID: %s", event.getChannel().getId()));
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.CHANNEL_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.CHANNEL_USER_LIMIT) != null)
+						.filter(e -> e.getTargetIdLong() == event.getChannel().getIdLong())
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.VOICE_CHANNEL_UPDATE_USER_LIMIT, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.VOICE_CHANNEL_UPDATE_USER_LIMIT, embed.build());
+			}
+		});
 	}
 	
 	public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
