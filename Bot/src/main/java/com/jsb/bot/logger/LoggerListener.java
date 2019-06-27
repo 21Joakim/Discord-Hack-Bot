@@ -18,6 +18,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.audit.ActionType;
 import net.dv8tion.jda.api.audit.AuditLogEntry;
 import net.dv8tion.jda.api.audit.AuditLogKey;
+import net.dv8tion.jda.api.entities.Guild.MFALevel;
 import net.dv8tion.jda.api.events.emote.EmoteAddedEvent;
 import net.dv8tion.jda.api.events.emote.EmoteRemovedEvent;
 import net.dv8tion.jda.api.events.emote.update.EmoteUpdateNameEvent;
@@ -29,6 +30,18 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRoleAddEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRoleRemoveEvent;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateNicknameEvent;
+import net.dv8tion.jda.api.events.guild.update.GuildUpdateAfkChannelEvent;
+import net.dv8tion.jda.api.events.guild.update.GuildUpdateAfkTimeoutEvent;
+import net.dv8tion.jda.api.events.guild.update.GuildUpdateExplicitContentLevelEvent;
+import net.dv8tion.jda.api.events.guild.update.GuildUpdateIconEvent;
+import net.dv8tion.jda.api.events.guild.update.GuildUpdateMFALevelEvent;
+import net.dv8tion.jda.api.events.guild.update.GuildUpdateNameEvent;
+import net.dv8tion.jda.api.events.guild.update.GuildUpdateNotificationLevelEvent;
+import net.dv8tion.jda.api.events.guild.update.GuildUpdateOwnerEvent;
+import net.dv8tion.jda.api.events.guild.update.GuildUpdateRegionEvent;
+import net.dv8tion.jda.api.events.guild.update.GuildUpdateSplashEvent;
+import net.dv8tion.jda.api.events.guild.update.GuildUpdateSystemChannelEvent;
+import net.dv8tion.jda.api.events.guild.update.GuildUpdateVerificationLevelEvent;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.events.role.RoleCreateEvent;
 import net.dv8tion.jda.api.events.role.RoleDeleteEvent;
@@ -657,7 +670,6 @@ public class LoggerListener extends ListenerAdapter {
 	/* TODO: Implement */
 	public void onEmoteUpdateRoles(EmoteUpdateRolesEvent event) {}
 	
-	/*
 	public void onGuildUpdateAfkChannel(GuildUpdateAfkChannelEvent event) {
 		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.GUILD_UPDATE_AFK_CHANNEL);
 		if(logger == null) {
@@ -666,20 +678,400 @@ public class LoggerListener extends ListenerAdapter {
 		
 		this.delay(() -> {
 			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
-			embed.setDescription(String.format("A message was sent by **%s**", event.getAuthor().getAsTag()));
-			embed.setColor(LoggerListener.COLOR_GREEN);
-			embed.setTimestamp(ZonedDateTime.now());
-			embed.setAuthor(event.getMember().getEffectiveName(), event.getAuthor().getEffectiveAvatarUrl());
-			embed.setFooter(String.format("User ID: %s", event.getAuthor().getId()));
-			embed.addField("Content", event.getMessage().getContentRaw(), true);
 			
-			LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_AFK_CHANNEL, embed.build());
+			if(event.getOldAfkChannel() == null) {
+				embed.setDescription(String.format("The AFK channel has been set to `%s`", event.getNewAfkChannel().getName()));
+			}else if(event.getNewAfkChannel() == null) {
+				embed.setDescription(String.format("The AFK channel [`%s`] has been removed", event.getOldAfkChannel().getName()));
+			}else{
+				embed.setDescription(String.format("The AFK channel has been changed from `%s` to `%s`", event.getOldAfkChannel().getName(), event.getNewAfkChannel().getName()));
+			}
+			
+			embed.setColor(LoggerListener.COLOR_ORANGE);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.GUILD_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.GUILD_AFK_CHANNEL) != null)
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_AFK_CHANNEL, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_AFK_CHANNEL, embed.build());
+			}
 		});
 	}
-	*/
+	
+	public void onGuildUpdateAfkTimeout(GuildUpdateAfkTimeoutEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.GUILD_UPDATE_AFK_TIMEOUT);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The AFK timeout has been changed from `%s` seconds to `%s`", event.getOldAfkTimeout().getSeconds(), event.getNewAfkTimeout().getSeconds()));
+			embed.setColor(LoggerListener.COLOR_ORANGE);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.GUILD_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.GUILD_AFK_TIMEOUT) != null)
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_AFK_TIMEOUT, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_AFK_TIMEOUT, embed.build());
+			}
+		});
+	}
+	
+	public void onGuildUpdateExplicitContentLevel(GuildUpdateExplicitContentLevelEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.GUILD_UPDATE_EXPLICIT_CONTENT_LEVEL);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The explicit content level has been changed from `%s` to `%s`", event.getOldLevel().getDescription(), event.getNewLevel().getDescription()));
+			embed.setColor(LoggerListener.COLOR_ORANGE);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.GUILD_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.GUILD_EXPLICIT_CONTENT_FILTER) != null)
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_EXPLICIT_CONTENT_LEVEL, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_EXPLICIT_CONTENT_LEVEL, embed.build());
+			}
+		});
+	}
+	
+	public void onGuildUpdateIcon(GuildUpdateIconEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.GUILD_UPDATE_ICON);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The server icon has been changed"));
+			embed.setColor(LoggerListener.COLOR_ORANGE);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.GUILD_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.GUILD_ICON) != null)
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_ICON, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_ICON, embed.build());
+			}
+		});
+	}
+	
+	public void onGuildUpdateMFALevel(GuildUpdateMFALevelEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.GUILD_UPDATE_MFA_LEVEL);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The server MFA (multi-factor authentication) level has been " + (event.getNewMFALevel().equals(MFALevel.TWO_FACTOR_AUTH) ? " set to `2FA (two factor authentication)`" : " removed")));
+			embed.setColor(LoggerListener.COLOR_ORANGE);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.GUILD_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.GUILD_MFA_LEVEL) != null)
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_MFA_LEVEL, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_MFA_LEVEL, embed.build());
+			}
+		});
+	}
+	
+	public void onGuildUpdateName(GuildUpdateNameEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.GUILD_UPDATE_NAME);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The server name has been changed from `%s` to `%s`", event.getOldName(), event.getNewName()));
+			embed.setColor(LoggerListener.COLOR_ORANGE);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.GUILD_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.GUILD_NAME) != null)
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_NAME, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_NAME, embed.build());
+			}
+		});
+	}
+	
+	public void onGuildUpdateNotificationLevel(GuildUpdateNotificationLevelEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.GUILD_UPDATE_NOTIFICATION_LEVEL);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The server notification level has been changed from `%s` to `%s`", event.getOldNotificationLevel().toString().replace("_", " ").toLowerCase(), event.getNewNotificationLevel().toString().replace("_", " ").toLowerCase()));
+			embed.setColor(LoggerListener.COLOR_ORANGE);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.GUILD_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.GUILD_NOTIFICATION_LEVEL) != null)
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_NOTIFICATION_LEVEL, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_NOTIFICATION_LEVEL, embed.build());
+			}
+		});
+	}
+	
+	public void onGuildUpdateOwner(GuildUpdateOwnerEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.GUILD_UPDATE_OWNER);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The server ownership has been transferred from %s to %s", event.getOldOwner().getUser().getAsMention(), event.getNewOwner().getUser().getAsMention()));
+			embed.setColor(LoggerListener.COLOR_ORANGE);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.GUILD_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.GUILD_OWNER) != null)
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_OWNER, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_OWNER, embed.build());
+			}
+		});
+	}
+	
+	public void onGuildUpdateRegion(GuildUpdateRegionEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.GUILD_UPDATE_REGION);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The server voice region has been changed from `%s` to `%s`", event.getOldRegion().getName(), event.getNewRegion().getName()));
+			embed.setColor(LoggerListener.COLOR_ORANGE);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.GUILD_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.GUILD_REGION) != null)
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_REGION, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_REGION, embed.build());
+			}
+		});
+	}
+	
+	public void onGuildUpdateSplash(GuildUpdateSplashEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.GUILD_UPDATE_SPLASH);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The server splash has been changed"));
+			embed.setColor(LoggerListener.COLOR_ORANGE);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.GUILD_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.GUILD_SPLASH) != null)
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_SPLASH, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_SPLASH, embed.build());
+			}
+		});
+	}
+	
+	public void onGuildUpdateSystemChannel(GuildUpdateSystemChannelEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.GUILD_UPDATE_SYSTEM_CHANNEL);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			
+			if(event.getOldSystemChannel() == null) {
+				embed.setDescription(String.format("The server system channel has been set to %s", event.getNewSystemChannel().getAsMention()));
+			}else if(event.getNewSystemChannel() == null) {
+				embed.setDescription(String.format("The server system channel [%s] has been removed", event.getOldSystemChannel().getAsMention()));
+			}else{
+				embed.setDescription(String.format("The server system channel has been changed from %s to %s", event.getOldSystemChannel().getAsMention(), event.getNewSystemChannel().getAsMention()));
+			}
+			
+			embed.setColor(LoggerListener.COLOR_ORANGE);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.GUILD_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.GUILD_SYSTEM_CHANNEL) != null)
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_SYSTEM_CHANNEL, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_SYSTEM_CHANNEL, embed.build());
+			}
+		});
+	}
+	
+	public void onGuildUpdateVerificationLevel(GuildUpdateVerificationLevelEvent event) {
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.GUILD_UPDATE_VERIFICATION_LEVEL);
+		if(logger == null) {
+			return;
+		}
+		
+		this.delay(() -> {
+			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
+			embed.setDescription(String.format("The server verfication level has been changed from `%s` to `%s`", event.getOldVerificationLevel().toString().replace("_", " ").toLowerCase(), event.getNewVerificationLevel().toString().replace("_", " ").toLowerCase()));
+			embed.setColor(LoggerListener.COLOR_ORANGE);
+			embed.setTimestamp(ZonedDateTime.now());
+			embed.setAuthor(event.getGuild().getName(), event.getGuild().getIconUrl());
+			
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.GUILD_UPDATE).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getChangeByKey(AuditLogKey.GUILD_VERIFICATION_LEVEL) != null)
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						embed.appendDescription(String.format(" by **%s**", entry.getUser().getAsTag()));
+					}
+					
+					LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_VERIFICATION_LEVEL, embed.build());
+				});
+			}else{
+				LoggerClient.get().queue(event.getGuild(), LoggerType.GUILD_UPDATE_VERIFICATION_LEVEL, embed.build());
+			}
+		});
+	}
 	
 	public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
-		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MESSAGE_);
+		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MESSAGE_RECEIVE);
 		if(logger == null) {
 			return;
 		}
@@ -693,7 +1085,7 @@ public class LoggerListener extends ListenerAdapter {
 			embed.setFooter(String.format("User ID: %s", event.getAuthor().getId()));
 			embed.addField("Content", event.getMessage().getContentRaw(), true);
 			
-			LoggerClient.get().queue(event.getGuild(), LoggerType.MESSAGE_, embed.build());
+			LoggerClient.get().queue(event.getGuild(), LoggerType.MESSAGE_RECEIVE, embed.build());
 		});
 	}
 }

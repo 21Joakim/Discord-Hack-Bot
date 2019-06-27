@@ -42,18 +42,29 @@ public enum LoggerType {
 	EMOTE_UPDATE_NAME(Category.EMOTE),
 	EMOTE_UPDATE_ROLES(Category.EMOTE),
 	
-	
+	/** {@link LoggerListener#onGuildUpdateAfkChannel(net.dv8tion.jda.api.events.guild.update.GuildUpdateAfkChannelEvent)} */
 	GUILD_UPDATE_AFK_CHANNEL(Category.GUILD),
+	/** {@link LoggerListener#onGuildUpdateAfkTimeout(net.dv8tion.jda.api.events.guild.update.GuildUpdateAfkTimeoutEvent)} */
 	GUILD_UPDATE_AFK_TIMEOUT(Category.GUILD),
+	/** {@link LoggerListener#onGuildUpdateExplicitContentLevel(net.dv8tion.jda.api.events.guild.update.GuildUpdateExplicitContentLevelEvent)} */
 	GUILD_UPDATE_EXPLICIT_CONTENT_LEVEL(Category.GUILD),
+	/** {@link LoggerListener#onGuildUpdateIcon(net.dv8tion.jda.api.events.guild.update.GuildUpdateIconEvent)} */
 	GUILD_UPDATE_ICON(Category.GUILD),
-	GUILD_UPDATE_MFA_LEVEL(Category.GUILD),
+	/** {@link LoggerListener#onGuildUpdateMFALevel(net.dv8tion.jda.api.events.guild.update.GuildUpdateMFALevelEvent)} */
+	GUILD_UPDATE_MFA_LEVEL(Category.GUILD), // Not tested
+	/** {@link LoggerListener#onGuildUpdateName(net.dv8tion.jda.api.events.guild.update.GuildUpdateNameEvent)} */
 	GUILD_UPDATE_NAME(Category.GUILD),
+	/** {@link LoggerListener#onGuildUpdateNotificationLevel(net.dv8tion.jda.api.events.guild.update.GuildUpdateNotificationLevelEvent)} */
 	GUILD_UPDATE_NOTIFICATION_LEVEL(Category.GUILD),
-	GUILD_UPDATE_OWNER(Category.GUILD),
+	/** {@link LoggerListener#onGuildUpdateOwner(net.dv8tion.jda.api.events.guild.update.GuildUpdateOwnerEvent)} */
+	GUILD_UPDATE_OWNER(Category.GUILD), // Not tested
+	/** {@link LoggerListener#onGuildUpdateRegion(net.dv8tion.jda.api.events.guild.update.GuildUpdateRegionEvent)} */
 	GUILD_UPDATE_REGION(Category.GUILD),
+	/** {@link LoggerListener#onGuildUpdateSplash(net.dv8tion.jda.api.events.guild.update.GuildUpdateSplashEvent)} */
 	GUILD_UPDATE_SPLASH(Category.GUILD),
+	/** {@link LoggerListener#onGuildUpdateSystemChannel(net.dv8tion.jda.api.events.guild.update.GuildUpdateSystemChannelEvent)} */
 	GUILD_UPDATE_SYSTEM_CHANNEL(Category.GUILD),
+	/** {@link LoggerListener#onGuildUpdateVerificationLevel(net.dv8tion.jda.api.events.guild.update.GuildUpdateVerificationLevelEvent)} */
 	GUILD_UPDATE_VERIFICATION_LEVEL(Category.GUILD),
 	
 	TEXT_CHANNEL_CREATE(Category.TEXT_CHANNEL, Category.CHANNEL),
@@ -94,7 +105,10 @@ public enum LoggerType {
 	VOICE_MOVE(Category.VOICE),
 	VOICE_SUPRESS(Category.VOICE),
 	
-	MESSAGE_(Category.MESSAGE),
+	/** {@link LoggerListener#onGuildMessageReceived(net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent)} */
+	MESSAGE_RECEIVE(Category.MESSAGE), // Used for testing
+	MESSAGE_EDIT(Category.MESSAGE),
+	MESSAGE_DELETE(Category.MESSAGE)
 	;
 	
 	public static enum Category {
