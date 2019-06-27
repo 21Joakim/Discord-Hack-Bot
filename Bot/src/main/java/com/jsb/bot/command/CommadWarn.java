@@ -24,12 +24,117 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.UpdateResult;
 
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
 
 public class CommadWarn extends CommandImpl {
 
 	public CommadWarn() {
 		super("warn");
+	}
+	
+	public static class WarningResult {
+		
+		private List<Document> warnings;
+		private Document actionTaken;
+		private Document warning;
+		
+		public WarningResult(List<Document> warnings, Document warning, Document actionTaken) {
+			this.warnings = warnings;
+			this.warning = warning;
+			this.actionTaken = actionTaken;
+		}
+		
+		public List<Document> getWarnings() {
+			return this.warnings;
+		}
+		
+		public Document getWarning() {
+			return this.warning;
+		}
+		
+		public Document getActionTaken() {
+			return this.actionTaken;
+		}
+		
+		public int getWarningCount() {
+			return this.warnings.size() + 1;
+		}
+		
+		public int getTotalWorth() {
+			return this.warnings.stream()
+				.mapToInt(w -> w.getInteger("worth"))
+				.sum() + this.warning.getInteger("worth");
+		}
+	}
+	
+	public static void doWarn(Guild guild, User moderator, User user, String reason, Integer worth, Callback<WarningResult> callback) {
+		ModuleBasic.getReason(guild, reason, templatedReason -> {
+			Document warning = new Document()
+				.append("guildId", guild.getIdLong())
+				.append("userId", user.getIdLong())
+				.append("moderatorId", moderator.getIdLong())
+				.append("worth", worth != null ? worth : 1)
+				.append("createdAt", Clock.systemUTC().instant().getEpochSecond())
+				.append("reason", templatedReason);
+			
+			Database.get().getWarnings(guild.getIdLong(), user.getIdLong(), (warnings, exception) -> {
+				if(exception != null) {
+					callback.onResult(null, exception);
+					
+					return;
+				}
+				
+				Database.get().insertWarning(warning, ($, exception2) -> {
+					if(exception2 != null) {
+						callback.onResult(null, exception2);
+						
+						return;
+					}
+					
+					Database.get().getGuildById(guild.getIdLong(), null, Projections.include("warning.actions", "warning.reapply"), (guildData, exception3) -> {
+						if(exception3 != null) {
+							callback.onResult(null, exception3);
+							
+							return;
+						}
+						
+						boolean reApplyAction = guildData.getEmbedded(List.of("warning", "reapply"), false);
+						
+						int totalWorth = warnings.stream()
+							.mapToInt(w -> w.getInteger("worth"))
+							.sum() + warning.getInteger("worth");
+						
+						List<Document> actions = guildData.getEmbedded(List.of("warning", "actions"), Collections.emptyList());
+						
+						Document action = actions.stream()
+							.filter(a -> a.getInteger("worth") <= totalWorth)
+							.sorted((a, a2) -> -Integer.compare(a.getInteger("worth"), a2.getInteger("worth")))
+							.findFirst()
+							.orElse(null);
+						
+						if(action != null) {
+							if(action.getInteger("worth") == totalWorth) {
+								/* Do action */
+								
+								callback.onResult(new WarningResult(warnings, warning, action), null);
+								
+								return;
+							}else if(reApplyAction) {
+								/* Do action */
+								
+								callback.onResult(new WarningResult(warnings, warning, action), null);
+								
+								return;
+							}
+						}
+						
+						callback.onResult(new WarningResult(warnings, warning, null), null);
+					});
+				});
+			});
+		});
 	}
 	
 	@AuthorPermissions(Permission.MESSAGE_MANAGE)
@@ -41,61 +146,21 @@ public class CommadWarn extends CommandImpl {
 			return;
 		}
 		
-		ModuleBasic.getReason(event.getGuild(), reason, templatedReason -> {
-			Document warning = new Document()
-				.append("guildId", event.getGuild().getIdLong())
-				.append("userId", member.getIdLong())
-				.append("moderatorId", event.getAuthor().getIdLong())
-				.append("worth", worth != null ? worth : 1)
-				.append("createdAt", Clock.systemUTC().instant().getEpochSecond())
-				.append("reason", templatedReason);
-			
-			Database.get().insertWarning(warning, ($, exception) -> {
-				if(exception != null) {
-					exception.printStackTrace();
-					
-					event.reply("Something went wrong :no_entry:").queue();
-					
-					return;
-				}
+		CommadWarn.doWarn(event.getGuild(), event.getAuthor(), member.getUser(), reason, worth, (warning, exception) -> {
+			if(exception != null) {
+				exception.printStackTrace();
 				
-				Database.get().getWarnings(event.getGuild().getIdLong(), member.getIdLong(), (warnings, exception2) -> {
-					if(exception2 != null) {
-						exception2.printStackTrace();
-						
-						event.reply("Something went wrong :no_entry:").queue();
-						
-						return;
-					}
-					
-					Database.get().getGuildById(event.getGuild().getIdLong(), null, Projections.include("warning.actions"), (guildData, exception3) -> {
-						if(exception3 != null) {
-							exception3.printStackTrace();
-							
-							event.reply("Something went wrong :no_entry:").queue();
-							
-							return;
-						}
-						
-						int totalWorth = warnings.stream()
-							.mapToInt(w -> w.getInteger("worth"))
-							.sum();
-						
-						List<Document> actions = guildData.getEmbedded(List.of("warning", "actions"), Collections.emptyList());
-						Document action = actions.stream()
-							.filter(a -> a.getInteger("worth") <= totalWorth)
-							.sorted((a, a2) -> -Integer.compare(a.getInteger("worth"), a2.getInteger("worth")))
-							.findFirst()
-							.orElse(null);
-						
-						if(action != null) {
-							
-						}
-						
-						event.reply("**" + member.getUser().getAsTag() + "** has been warned, they now have `" + warnings.size() + "` warnings (" + totalWorth + " worth)").queue();
-					});
-				});
-			});
+				event.reply("Something went wrong :no_entry:").queue();
+				
+				return;
+			}
+			
+			String message = "**" + member.getUser().getAsTag() + "** has been warned, they now have `" + warning.getWarningCount() + "` warnings (worth **" + warning.getTotalWorth() + "**)";
+			if(warning.getActionTaken() != null) {
+				message += ", action taken: `" + warning.getActionTaken().getString("action").toLowerCase() + "`";
+			}
+			
+			event.reply(message).queue();
 		});
 	}
 	
