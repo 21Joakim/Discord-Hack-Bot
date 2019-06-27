@@ -63,6 +63,8 @@ public class JSBBot {
 			shard.awaitReady();
 		}
 		
+		MuteListener.ensureMutes();
+		
 		System.out.println(String.format("Started %s with %,d guilds", shardManager.getShards().get(0).getSelfUser().getAsTag(), shardManager.getGuilds().size()));
 	}
 	

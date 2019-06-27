@@ -8,9 +8,11 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.bson.Document;
 
+import com.jsb.bot.core.JSBBot;
 import com.jsb.bot.database.Database;
 import com.jsb.bot.database.callback.Callback;
 import com.jsb.bot.modlog.Action;
@@ -26,7 +28,6 @@ import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.sharding.ShardManager;
 
 public class MuteListener extends ListenerAdapter {
 	
@@ -70,8 +71,8 @@ public class MuteListener extends ListenerAdapter {
 		});
 	}
 	
-	public static void unmuteUser(ShardManager shardManager, long guildId, long memberId, long muteRoleId) {
-		Guild guild = shardManager.getGuildById(guildId);
+	public static void unmuteUser(long guildId, long memberId, long muteRoleId) {
+		Guild guild = JSBBot.getShardManager().getGuildById(guildId);
 		if (guild != null) {
 			Member member = guild.getMemberById(memberId);
 			Role role = guild.getRoleById(muteRoleId);
@@ -111,6 +112,30 @@ public class MuteListener extends ListenerAdapter {
 		}
 	}
 	
+	public static void ensureMutes() {
+		long timestampNow = Clock.systemUTC().instant().getEpochSecond();
+		for (Document data : Database.get().getGuilds().find().projection(Projections.include("mute.users", "mute.role"))) {
+			long guildId = data.getLong("_id");
+			Document muteData = data.get("mute", null);
+			
+			List<Document> users = muteData.getList("users", Document.class);
+			long muteRoleId = muteData.getLong("role");
+			if (muteData != null) {
+				for (Document user : users) {
+					long userId = user.getLong("id");
+					long timeLeft = (user.getLong("length") + user.getLong("time")) - timestampNow;
+					if (timeLeft > 0) {
+						ScheduledFuture<?> executor = MuteListener.scheduledExector.schedule(() -> MuteListener.unmuteUser(guildId, userId, muteRoleId), timeLeft, TimeUnit.SECONDS);
+						
+						MuteListener.putExecutor(guildId, userId, executor);
+					} else {
+						MuteListener.unmuteUser(guildId, userId, muteRoleId);
+					}
+				}
+			}
+		}
+	}
+	
 	public static Map<Long, Map<Long, ScheduledFuture<?>>> getExecutors() {
 		return executors;
 	}
@@ -144,7 +169,7 @@ public class MuteListener extends ListenerAdapter {
 				Member selfMember = event.getGuild().getSelfMember();
 				
 				Document muteData = data.get("mute", Document.class);
-				Document action = data.get("action", Document.class);
+				Document action = muteData.get("action", Document.class);
 				
 				List<Document> users = muteData.getList("users", Document.class);
 				for (Document user : users) {
@@ -176,7 +201,7 @@ public class MuteListener extends ListenerAdapter {
 				Member selfMember = event.getGuild().getSelfMember();
 				
 				Document muteData = data.get("mute", Document.class);
-				Document action = data.get("action", Document.class);
+				Document action = muteData.get("action", Document.class);
 				
 				List<Document> users = muteData.getList("users", Document.class);
 				for (Document user : users) {
