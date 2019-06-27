@@ -44,21 +44,21 @@ public class LoggerUtility {
 			return EnumSet.noneOf(LoggerType.class);
 		}
 		
-		List<Document> enabledEvents = logger.getList("enabledEvents", Document.class, Collections.emptyList());
-		List<Document> disabledEvents = logger.getList("disabledEvents", Document.class, Collections.emptyList());
+		List<Document> events = logger.getList("events", Document.class, Collections.emptyList());
+		boolean mode = logger.getBoolean("mode");
 		
-		if(enabledEvents.size() + disabledEvents.size() == 0) {
+		if(!mode && events.size() == 0) {
 			return EnumSet.allOf(LoggerType.class);
 		}
 		
-		if(enabledEvents.size() > 0) {
+		if(mode) {
 			EnumSet<LoggerType> set = EnumSet.noneOf(LoggerType.class);
-			set.addAll(LoggerUtility.getEvents(enabledEvents));
+			set.addAll(LoggerUtility.getEvents(events));
 			
 			return set;
-		}else if(disabledEvents.size() > 0) {
+		}else if(!mode) {
 			EnumSet<LoggerType> set = EnumSet.allOf(LoggerType.class);
-			set.removeAll(LoggerUtility.getEvents(disabledEvents));
+			set.removeAll(LoggerUtility.getEvents(events));
 			
 			return set;
 		}

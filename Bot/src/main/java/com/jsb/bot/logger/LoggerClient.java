@@ -92,26 +92,31 @@ class LoggerClient {
 			return false;
 		}
 		
-		List<Document> enabledEvents = logger.getList("enabledEvents", Document.class, Collections.emptyList());
-		List<Document> disabledEvents = logger.getList("disabledEvents", Document.class, Collections.emptyList());
+		List<Document> events = logger.getList("events", Document.class, Collections.emptyList());
+		boolean mode = logger.getBoolean("mode");
 		
-		boolean enabled = enabledEvents.size() == 0;
-		Document enabledEvent = Database.EMPTY_DOCUMENT;
-		
-		for(Document event : enabledEvents) {
-			if(event.getString("type").equalsIgnoreCase(type.toString())) {
-				enabled = true;
-				enabledEvent = event;
+		Document foundEvent = null;
+		if(mode) {
+			if(events.size() == 0) {
+				return false;
+			}else{
+				for(Document event : events) {
+					if(event.getString("type").equalsIgnoreCase(type.toString())) {
+						foundEvent = event;
+					}
+				}
+			}
+		}else{
+			foundEvent = new Document("type", type.toString());
+			
+			for(Document event : events) {
+				if(event.getString("type").equalsIgnoreCase(type.toString())) {
+					return false;
+				}
 			}
 		}
 		
-		for(Document event : disabledEvents) {
-			if(event.getString("type").equalsIgnoreCase(type.toString())) {
-				enabled = false;
-			}
-		}
-		
-		if(enabled && (predicate == null || predicate.test(enabledEvent))) {
+		if(foundEvent != null && (predicate == null || predicate.test(foundEvent))) {
 			return true;
 		}
 		

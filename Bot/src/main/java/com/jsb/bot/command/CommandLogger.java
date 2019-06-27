@@ -42,66 +42,55 @@ public class CommandLogger extends CommandImpl {
 	@AuthorPermissions(Permission.MANAGE_SERVER)
 	@Command(value="add")
 	public void add(CommandEvent event, @Argument("channel") TextChannel channel) {
-		Database.get().getGuildById(event.getGuild().getIdLong(), null, Projections.include("logger.loggers"), (data, exception) -> {
+		LoggerUtility.getLoggers(event.getGuild(), (loggers, exception) -> {
 			if(exception != null) {
 				exception.printStackTrace();
 				
 				event.reply("Something went wrong :no_entry:").queue();
-			}else{
-				List<Document> loggers = data.getEmbedded(List.of("logger", "loggers"), Collections.emptyList());
-				if(loggers.size() >= 5) {
-					event.reply("You can't have more than 5 loggers :no_entry:").queue();
+				
+				return;
+			}
+			
+			if(loggers.size() >= 5) {
+				event.reply("You can't have more than 5 loggers :no_entry:").queue();
+				
+				return;
+			}
+			
+			for(Document logger : loggers) {
+				Long loggerChannel = logger.getLong("channelId");
+				if(loggerChannel != null && loggerChannel.equals(channel.getIdLong())) {
+					if(logger.getBoolean("enabled", true)) {
+						event.reply("That channel already has a logger :no_entry:").queue();
+					}else{
+						event.reply("That channel already has a logger but it is not enabled, enable it with the `logger enable` command :no_entry:").queue();
+					}
 					
 					return;
 				}
-				
-				AtomicBoolean alreadyExists = new AtomicBoolean(false);
-				for(Document logger : loggers) {
-					Long loggerChannel = logger.getLong("channelId");
-					if(loggerChannel != null && loggerChannel.equals(channel.getIdLong())) {
-						if(logger.getBoolean("enabled", true)) {
-							event.reply("That channel already has a logger :no_entry:").queue();
-						}else{
-							event.reply("That channel already has a logger but it is not enabled, enable it with the `logger enable` command :no_entry:").queue();
-						}
-						
-						return;
-					}
-					
-					List<Document> enabledEvents = logger.getList("enabledEvents", Document.class, Collections.emptyList());
-					List<Document> disabledEvents = logger.getList("enabledEvents", Document.class, Collections.emptyList());
-					
-					if(enabledEvents.size() + disabledEvents.size() == 0) {
-						alreadyExists.set(true);
-					}
-				}
-				
-				channel.createWebhook("Logger").queue(webhook -> {
-					Document logger = new Document()
-						.append("enabled", !alreadyExists.get())
-						.append("channelId", channel.getIdLong())
-						.append("webhookId", webhook.getIdLong())
-						.append("webhookToken", webhook.getToken())
-						.append("enabledEvents", Collections.emptyList())
-						.append("disabledEvents", Collections.emptyList());
-					
-					Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.push("logger.loggers", logger), (result, exception2) -> {
-						if(exception2 != null) {
-							exception2.printStackTrace();
-							
-							event.reply("Something went wrong :no_entry:").queue();
-						}else{
-							if(alreadyExists.get()) {
-								event.reply("Created logger for " + channel.getAsMention() + " but it has been disabled because there already is a logger with all logs enabled").queue();
-							}else{
-								event.reply("Created logger for " + channel.getAsMention()).queue();
-							}
-						}
-					});
-				}, exception2 -> {
-					event.reply("Failed to create the webhook :no_entry:").queue();
-				});
 			}
+			
+			channel.createWebhook("Logger").queue(webhook -> {
+				Document logger = new Document()
+					.append("enabled", false)
+					.append("mode", false)
+					.append("events", Collections.emptyList())
+					.append("channelId", channel.getIdLong())
+					.append("webhookId", webhook.getIdLong())
+					.append("webhookToken", webhook.getToken());
+				
+				Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.push("logger.loggers", logger), (result, exception2) -> {
+					if(exception2 != null) {
+						exception2.printStackTrace();
+						
+						event.reply("Something went wrong :no_entry:").queue();
+					}else{
+						event.reply("Created logger for " + channel.getAsMention() + ", loggers are disabled by default, use the `logger enable` command to enable it").queue();
+					}
+				});
+			}, exception2 -> {
+				event.reply("Failed to create the webhook :no_entry:").queue();
+			});
 		});
 	}
 	
@@ -259,65 +248,56 @@ public class CommandLogger extends CommandImpl {
 	}
 	
 	private void enableEvents(CommandEvent event, Document logger, boolean enable, EnumSet<LoggerType> events) {
-		List<Document> enabledEvents = logger.getList("enabledEvents", Document.class, new ArrayList<>());
-		List<Document> disabledEvents = logger.getList("disabledEvents", Document.class, new ArrayList<>());
+		List<Document> loggerEvents = logger.getList("events", Document.class, new ArrayList<>());
 		
-		boolean empty = enabledEvents.size() + disabledEvents.size() == 0;
-		boolean isDisabledMode = disabledEvents.size() != 0;
-		boolean isEnabledMode = enabledEvents.size() != 0;
-		
-		for(LoggerType type : events) {
-			if(empty) {
-				if(enable) {
-					enabledEvents.add(new Document("type", type.toString()));
-				}else{
-					disabledEvents.add(new Document("type", type.toString()));
-				}
-				
-				continue;
+		boolean mode;
+		if(loggerEvents.size() == 0) {
+			mode = enable;
+			
+			for(LoggerType type : events) {
+				loggerEvents.add(new Document("type", type.toString()));
 			}
+		}else{
+			mode = logger.getBoolean("mode");
 			
-			Document enabledEvent = enabledEvents.stream()
-				.filter(e -> e.getString("type").equals(type.toString()))
-				.findFirst()
-				.orElse(null);
-			
-			Document disabledEvent = disabledEvents.stream()
-				.filter(e -> e.getString("type").equals(type.toString()))
-				.findFirst()
-				.orElse(null);
-			
-			if(enable) {
-				if(isDisabledMode) {
-					if(disabledEvent != null) {
-						disabledEvents.remove(disabledEvent);
-					}else{
+			for(LoggerType type : events) {
+				Document loggerEvent = loggerEvents.stream()
+					.filter(e -> e.getString("type").equals(type.toString()))
+					.findFirst()
+					.orElse(null);
+				
+				if(enable) {
+					if(!mode) {
+						if(loggerEvent != null) {
+							loggerEvents.remove(loggerEvent);
+						}else{
+							event.reply("`" + type.toString() + "` is already enabled :no_entry:").queue();
+							
+							return;
+						}
+					}else if(loggerEvent != null) {
 						event.reply("`" + type.toString() + "` is already enabled :no_entry:").queue();
 						
 						return;
-					}
-				}else if(enabledEvent != null) {
-					event.reply("`" + type.toString() + "` is already enabled :no_entry:").queue();
-					
-					return;
-				}else{
-					enabledEvents.add(new Document("type", type.toString()));
-				}
-			}else{
-				if(isEnabledMode) {
-					if(enabledEvent != null) {
-						enabledEvents.remove(enabledEvent);
 					}else{
-						event.reply("`" + type.toString() + "`is already disabled :no_entry:").queue();
+						loggerEvents.add(new Document("type", type.toString()));
+					}
+				}else{
+					if(mode) {
+						if(loggerEvent != null) {
+							loggerEvents.remove(loggerEvent);
+						}else{
+							event.reply("`" + type.toString() + "`is already disabled :no_entry:").queue();
+							
+							return;
+						}
+					}else if(loggerEvent != null) {
+						event.reply("`" + type.toString() + "` is already disabled :no_entry:").queue();
 						
 						return;
+					}else{
+						loggerEvents.add(new Document("type", type.toString()));
 					}
-				}else if(disabledEvent != null) {
-					event.reply("`" + type.toString() + "` is already disabled :no_entry:").queue();
-					
-					return;
-				}else{
-					disabledEvents.add(new Document("type", type.toString()));
 				}
 			}
 		}
@@ -340,14 +320,14 @@ public class CommandLogger extends CommandImpl {
 					event.reply("Something went wrong :no_entry:").queue();
 				}else{
 					EnumSet<LoggerType> set = null;
-					if(enabledEvents.size() + disabledEvents.size() == 0) {
+					if(loggerEvents.size() == 0) {
 						set = EnumSet.allOf(LoggerType.class);
-					}else if(enabledEvents.size() > 0) {
+					}else if(mode) {
 						set = EnumSet.noneOf(LoggerType.class);
-						set.addAll(LoggerUtility.getEvents(enabledEvents));
-					}else if(disabledEvents.size() > 0) {
+						set.addAll(LoggerUtility.getEvents(loggerEvents));
+					}else if(!mode) {
 						set = EnumSet.allOf(LoggerType.class);
-						set.removeAll(LoggerUtility.getEvents(disabledEvents));
+						set.removeAll(LoggerUtility.getEvents(loggerEvents));
 					}
 					
 					loggers = loggers.stream()
@@ -360,14 +340,14 @@ public class CommandLogger extends CommandImpl {
 						return;
 					}
 					
-					Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.combine(Updates.set("logger.loggers.$[logger].disabledEvents", disabledEvents), Updates.set("logger.loggers.$[logger].enabledEvents", enabledEvents)), options, callback);
+					Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.combine(Updates.set("logger.loggers.$[logger].mode", mode), Updates.set("logger.loggers.$[logger].events", loggerEvents)), options, callback);
 				}
 			});
 			
 			return;
 		}
 		
-		Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.combine(Updates.set("logger.loggers.$[logger].disabledEvents", disabledEvents), Updates.set("logger.loggers.$[logger].enabledEvents", enabledEvents)), options, callback);
+		Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.combine(Updates.set("logger.loggers.$[logger].mode", mode), Updates.set("logger.loggers.$[logger].events", loggerEvents)), options, callback);
 	}
 	
 	@AuthorPermissions(Permission.MANAGE_SERVER)
