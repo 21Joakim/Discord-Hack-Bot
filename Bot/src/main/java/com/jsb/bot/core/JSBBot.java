@@ -15,6 +15,7 @@ import com.jsb.bot.logger.LoggerListener;
 import com.jsb.bot.modlog.ModlogListener;
 import com.jsb.bot.mute.MuteListener;
 import com.jsb.bot.paged.PagedManager;
+import com.jsb.bot.utility.CheckUtility;
 import com.jsb.server.Webserver;
 
 import net.dv8tion.jda.api.JDA;
@@ -52,6 +53,11 @@ public class JSBBot {
 			.addCommandStore(CommandStore.of("com.jsb.bot.module"))
 			.addDevelopers(281465397214052352L, 190551803669118976L, 402557516728369153L)
 			.setDefaultPrefixes(JSBBot.config.getJSONArray("prefixes").toList().toArray(new String[0]));
+		
+		listener.removeDefaultPreExecuteChecks()
+			.addPreExecuteCheck(listener.defaultBotPermissionCheck)
+			.addPreExecuteCheck(listener.defaultNsfwCheck)
+			.addPreExecuteCheck((event, command) -> CheckUtility.checkPermissions(event));
 		
 		ShardManager shardManager = new DefaultShardManagerBuilder(JSBBot.config.getString("token"))
 			.addEventListeners(listener, PagedManager.get(), new LoggerListener(), new ModlogListener(), new MuteListener())

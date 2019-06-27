@@ -116,11 +116,11 @@ public class MuteListener extends ListenerAdapter {
 		long timestampNow = Clock.systemUTC().instant().getEpochSecond();
 		for (Document data : Database.get().getGuilds().find().projection(Projections.include("mute.users", "mute.role"))) {
 			long guildId = data.getLong("_id");
-			Document muteData = data.get("mute", null);
-			
-			List<Document> users = muteData.getList("users", Document.class);
-			long muteRoleId = muteData.getLong("role");
-			if (muteData != null) {
+			Document muteData = data.get("mute", new Document());
+	
+			if (!muteData.isEmpty()) {
+				List<Document> users = muteData.getList("users", Document.class);
+				long muteRoleId = muteData.getLong("role");
 				for (Document user : users) {
 					long userId = user.getLong("id");
 					long timeLeft = (user.getLong("length") + user.getLong("time")) - timestampNow;

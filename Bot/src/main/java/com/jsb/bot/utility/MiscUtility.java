@@ -1,22 +1,22 @@
 package com.jsb.bot.utility;
 
 import java.util.Collection;
-import java.util.List;
 
 import club.minnced.discord.webhook.send.WebhookEmbed;
 import club.minnced.discord.webhook.send.WebhookEmbed.EmbedField;
 
 public class MiscUtility {
 
-	public static <Type> String join(List<Type> list, String joinBy) {
+	public static <Type> String join(Collection<Type> list, String joinBy) {
 		StringBuilder string = new StringBuilder();
-		for (int i = 0; i < list.size(); i++) {
-			Type object = list.get(i);
-			
+		int index = 0;
+		for (Type object : list) {
 			string.append(object.toString());
-			if (i != list.size() - 1) {
+			if (index != list.size() - 1) {
 				string.append(joinBy);
 			}
+			
+			index++;
 		}
 		
 		return string.toString();

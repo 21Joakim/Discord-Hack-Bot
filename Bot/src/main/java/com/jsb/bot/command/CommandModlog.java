@@ -2,6 +2,7 @@ package com.jsb.bot.command;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.bson.Document;
@@ -289,7 +290,7 @@ public class CommandModlog extends CommandImpl {
 				event.reply("Something went wrong :no_entry:").queue();
 			} else {
 				Document document = data.getEmbedded(List.of("modlog"), new Document());
-				List<String> disabledActions = document.getList("disabledActions", String.class);
+				List<String> disabledActions = document.getList("disabledActions", String.class, Collections.emptyList());
 				boolean enabled = document.getBoolean("enabled", false);
 				
 				TextChannel channel = null;
