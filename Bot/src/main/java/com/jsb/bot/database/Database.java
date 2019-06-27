@@ -46,6 +46,8 @@ public class Database {
 	private MongoCollection<Document> modlogCases;
 	private MongoCollection<Document> warnings;
 	
+	private MongoCollection<Document> dashboardUsers;
+	
 	private Database() {
 		JSONObject mongodb = JSBBot.getConfig("mongodb");
 		
@@ -74,6 +76,8 @@ public class Database {
 		this.warnings = this.database.getCollection("warnings");
 		this.warnings.createIndex(Indexes.ascending("guildId"));
 		this.warnings.createIndex(Indexes.ascending("userId"));
+		
+		this.dashboardUsers = this.database.getCollection("dashboardUsers");
 		
 		System.out.println("Connecting to MongoDB...");
 		
@@ -269,5 +273,17 @@ public class Database {
 				callback.onResult(null, e);
 			}
 		});
+	}
+	
+	public MongoCollection<Document> getWebsiteUsers() {
+		return this.dashboardUsers;
+	}
+	
+	public Document getDashboardUser(long userId) {
+		return this.dashboardUsers.find(Filters.eq("_id", userId)).first();
+	}
+	
+	public UpdateResult updateDashboardUser(long userId, Bson update) {
+		return this.dashboardUsers.updateOne(Filters.eq(userId), update, this.defaultUpdateOptions);
 	}
 }

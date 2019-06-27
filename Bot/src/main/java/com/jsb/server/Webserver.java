@@ -9,8 +9,10 @@ import org.json.JSONObject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.jsb.bot.core.JSBBot;
 import com.jsb.server.api.JSBBotResource;
+import com.jsb.server.api.UserResource;
 import com.jsb.server.serializer.JSONObjectDeserializer;
 import com.jsb.server.serializer.JSONObjectSerializer;
 
@@ -36,8 +38,13 @@ public class Webserver {
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.registerModule(module);
 		
+		JacksonJaxbJsonProvider provider = new JacksonJaxbJsonProvider();
+		provider.setMapper(mapper);
+		
 		ResourceConfig config = new ResourceConfig();
 		config.register(JSBBotResource.class);
+		config.register(UserResource.class);
+		config.register(provider);
 		
 		contextHandler.addServlet(new ServletHolder(new ServletContainer(config)), "/api/*");
 		

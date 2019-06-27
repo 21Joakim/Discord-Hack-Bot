@@ -3,7 +3,9 @@ package com.jsb.bot.core;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.jockie.bot.core.command.impl.CommandListener;
@@ -97,7 +99,21 @@ public class JSBBot {
 			}
 			
 			if(i == splitPath.length - 1) {
-				return (T) value;
+				if(value instanceof JSONArray) {
+					try {
+						return (T) value;
+					}catch(ClassCastException e) {}
+					
+					try {
+						return (T) (value = ((JSONArray) value).toList());
+					}catch(ClassCastException e) {}
+					
+					try {
+						return (T) ((List<?>) value).toArray();
+					}catch(ClassCastException e) {}
+				}else{
+					return (T) value;
+				}
 			}
 		}
 		

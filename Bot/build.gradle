@@ -28,4 +28,6 @@ dependencies {
 	
 	compile group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-json-provider', version: '2.9.8'
 	compile group: 'org.json', name: 'json', version: '20180813'
+	
+	compile group: 'com.auth0', name: 'java-jwt', version: '3.8.0'
 }
