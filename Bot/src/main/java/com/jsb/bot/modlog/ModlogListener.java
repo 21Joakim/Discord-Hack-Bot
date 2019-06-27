@@ -62,7 +62,11 @@ public class ModlogListener extends ListenerAdapter {
 											.append("action", action.toString())
 											.append("automatic", automatic);
 									
-									Database.get().insertModlogCase(newCase);
+									Database.get().insertModlogCase(newCase, ($, exception) -> {
+										if(exception != null) {
+											exception.printStackTrace();
+										}
+									});
 								});
 								
 								return;
@@ -81,7 +85,11 @@ public class ModlogListener extends ListenerAdapter {
 								.append("action", action.toString())
 								.append("automatic", automatic);
 						
-						Database.get().insertModlogCase(newCase);
+						Database.get().insertModlogCase(newCase, ($, exception) -> {
+							if(exception != null) {
+								exception.printStackTrace();
+							}
+						});
 					}
 				}
 			}

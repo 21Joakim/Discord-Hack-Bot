@@ -1,5 +1,6 @@
 package com.jsb.bot.database;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,6 +44,7 @@ public class Database {
 	
 	private MongoCollection<Document> guilds;
 	private MongoCollection<Document> modlogCases;
+	private MongoCollection<Document> warnings;
 	
 	private Database() {
 		JSONObject mongodb = JSBBot.getConfig("mongodb");
@@ -68,6 +70,10 @@ public class Database {
 		this.modlogCases = this.database.getCollection("modlogCases");
 		this.modlogCases.createIndex(Indexes.ascending("guildId"));
 		this.modlogCases.createIndex(Indexes.ascending("id"));
+		
+		this.warnings = this.database.getCollection("warnings");
+		this.warnings.createIndex(Indexes.ascending("guildId"));
+		this.warnings.createIndex(Indexes.ascending("userId"));
 		
 		System.out.println("Connecting to MongoDB...");
 		
@@ -124,9 +130,15 @@ public class Database {
 		});
 	}
 	
-	public void insertModlogCase(Document document) {
+	public void insertModlogCase(Document document, Callback<Void> callback) {
 		this.queryExecutor.submit(() -> {
-			this.modlogCases.insertOne(document);
+			try {
+				this.modlogCases.insertOne(document);
+				
+				callback.onResult(null, null);
+			}catch(Throwable e) {
+				callback.onResult(null, e);
+			}
 		});
 	}
 	
@@ -213,5 +225,49 @@ public class Database {
 	
 	public void updateGuildById(long guildId, Bson update, Callback<UpdateResult> callback) {
 		this.updateGuildById(guildId, null, update, null, callback);
+	}
+	
+	public MongoCollection<Document> getWarnings() {
+		return this.warnings;
+	}
+	
+	public List<Document> getWarnings(long guildId) {
+		return this.warnings.find(Filters.eq("guildId", guildId)).into(new ArrayList<>());
+	}
+	
+	public void getWarnings(long guildId, Callback<List<Document>> callback) {
+		this.queryExecutor.submit(() -> {
+			try {
+				callback.onResult(this.getWarnings(guildId), null);
+			}catch(Throwable e) {
+				callback.onResult(null, e);
+			}
+		});
+	}
+	
+	public List<Document> getWarnings(long guildId, long userId) {
+		return this.warnings.find(Filters.and(Filters.eq("guildId", guildId), Filters.eq("userId", userId))).into(new ArrayList<>());
+	}
+	
+	public void getWarnings(long guildId, long userId, Callback<List<Document>> callback) {
+		this.queryExecutor.submit(() -> {
+			try {
+				callback.onResult(this.getWarnings(guildId, userId), null);
+			}catch(Throwable e) {
+				callback.onResult(null, e);
+			}
+		});
+	}
+	
+	public void insertWarning(Document warning, Callback<Void> callback) {
+		this.queryExecutor.submit(() -> {
+			try {
+				this.warnings.insertOne(warning);
+				
+				callback.onResult(null, null);
+			}catch(Throwable e) {
+				callback.onResult(null, e);
+			}
+		});
 	}
 }
