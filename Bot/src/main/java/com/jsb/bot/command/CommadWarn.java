@@ -16,6 +16,7 @@ import com.jsb.bot.database.callback.Callback;
 import com.jsb.bot.modlog.Action;
 import com.jsb.bot.module.ModuleBasic;
 import com.jsb.bot.utility.ArgumentUtility;
+import com.jsb.bot.utility.TimeUtility;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.UpdateOptions;
@@ -80,7 +81,16 @@ public class CommadWarn extends CommandImpl {
 							.mapToInt(w -> w.getInteger("worth"))
 							.sum();
 						
-						// Check actions
+						List<Document> actions = guildData.getEmbedded(List.of("warning", "actions"), Collections.emptyList());
+						Document action = actions.stream()
+							.filter(a -> a.getInteger("worth") <= totalWorth)
+							.sorted((a, a2) -> -Integer.compare(a.getInteger("worth"), a2.getInteger("worth")))
+							.findFirst()
+							.orElse(null);
+						
+						if(action != null) {
+							
+						}
 						
 						event.reply("**" + member.getUser().getAsTag() + "** has been warned, they now have `" + warnings.size() + "` warnings (" + totalWorth + " worth)").queue();
 					});
@@ -91,7 +101,15 @@ public class CommadWarn extends CommandImpl {
 	
 	@AuthorPermissions(Permission.MANAGE_SERVER)
 	@Command("action set")
-	public void actionSet(CommandEvent event, @Argument(value="warning worth") int worth, @Argument(value="action") String rawAction) {
+	public void actionSet(CommandEvent event, @Argument(value="warning worth") int worth, @Argument(value="action", endless=true) String rawAction) {
+		String extraContent;
+		if(rawAction.contains(" ")) {
+			extraContent = rawAction.substring(rawAction.indexOf(" ") + 1);
+			rawAction = rawAction.substring(0, rawAction.indexOf(" "));
+		}else{
+			extraContent = null;
+		}
+		
 		Action action;
 		try {
 			action = Action.valueOf(rawAction.toUpperCase());
@@ -116,6 +134,24 @@ public class CommadWarn extends CommandImpl {
 			Document actionDocument = new Document()
 				.append("worth", worth)
 				.append("action", action.toString());
+			
+			if(action.equals(Action.MUTE)) {
+				if(extraContent != null) {
+					try {
+						long duration = TimeUtility.timeStringToSeconds(extraContent);
+						
+						actionDocument.append("duration", duration);
+					}catch(IllegalArgumentException e) {
+						event.reply("Invalid mute duration").queue();
+						
+						return;
+					}
+				}else{
+					event.reply("Missing mute duration").queue();
+					
+					return;
+				}
+			}
 			
 			Callback<UpdateResult> callback = (result, exception2) -> {
 				if(exception2 != null) {
