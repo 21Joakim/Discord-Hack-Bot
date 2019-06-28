@@ -19,6 +19,7 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import org.bson.Document;
+import org.bson.conversions.Bson;
 
 import com.jockie.bot.core.argument.Argument;
 import com.jockie.bot.core.command.Command;
@@ -625,7 +626,7 @@ public class ModuleBasic {
 							
 							event.reply("Something went wrong :no_entry:").queue();
 						} else {
-							List<Document> users = data.getEmbedded(List.of("mute", "users"), Collections.emptyList());
+							List<Document> users = data.getEmbedded(List.of("mute", "users"), new ArrayList<>());
 							
 							for (Document user : users) {
 								if (user.getLong("id") == member.getIdLong()) {
@@ -635,7 +636,7 @@ public class ModuleBasic {
 							}
 							
 							Document muteData = new Document()
-									.append("length", muteLength)
+									.append("duration", muteLength)
 									.append("time", Clock.systemUTC().instant().getEpochSecond())
 									.append("id", member.getUser().getIdLong());
 							
@@ -647,7 +648,7 @@ public class ModuleBasic {
 									
 									event.reply("Something went wrong :no_entry:").queue();
 								} else {
-									event.reply("**" + member.getUser().getAsTag() + "** has been muted for some time here").queue();
+									event.reply("**" + member.getUser().getAsTag() + "** has been muted for " + TimeUtility.secondsToTimeString(muteLength)).queue();
 									
 									ModuleBasic.getReason(event.getGuild(), reason, templatedReason -> {
 										ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), templatedReason, false, Action.MUTE);
@@ -712,10 +713,14 @@ public class ModuleBasic {
 		
 		@Command(value="evasion", aliases={"evade"}, description="Set what should happen to a user when they try to mute evade")
 		@AuthorPermissions({Permission.MANAGE_SERVER})
-		public void evasion(CommandEvent event, @Argument(value="punishment") String punishmentArgument) {
+		public void evasion(CommandEvent event, @Argument(value="punishment", endless=true) String punishmentArgument) {
+			String[] punishmentSplit = punishmentArgument.split(" ", 2);
+			String punishmentString = punishmentSplit[0];
+			String extra = punishmentSplit.length > 1 ? punishmentSplit[1] : null;
+			
 			MuteEvasionType evasionType;
 			try {
-				evasionType = MuteEvasionType.valueOf(punishmentArgument.toUpperCase());
+				evasionType = MuteEvasionType.valueOf(punishmentString.toUpperCase());
 			} catch(IllegalArgumentException e) {
 				event.reply("Invalid punishment, valid punishments are `" + MiscUtility.join(List.of(MuteEvasionType.values()), "`, `") + "` :no_entry:").queue();
 				return;
@@ -727,19 +732,48 @@ public class ModuleBasic {
 					
 					event.reply("Something went wrong :no_entry:").queue();
 				} else {
-					Document action = data.getEmbedded(List.of("mute", "action"), new Document().append("type", "REMUTE_ON_JOIN"));
-					if (action.getString("type").equals(evasionType.toString())) {
-						event.reply("The punishment for mute evading is already set to that :no_entry:").queue();
-						return;
+					Document actionData = data.getEmbedded(List.of("mute", "action"), new Document().append("type", "REMUTE_ON_JOIN"));
+					
+					List<Bson> updates = new ArrayList<>();
+					updates.add(Updates.set("mute.action.type", evasionType.toString()));
+					
+					StringBuilder reply = new StringBuilder();
+					reply.append("The punishment for mute evading has been set to `" + evasionType.toString() + "`");
+					
+					if (evasionType.equals(MuteEvasionType.WARN_ON_JOIN)) {
+						int worth = 1;
+						if (extra != null) {
+							if (MiscUtility.isNumber(extra)) {
+								worth = Integer.parseInt(extra);
+							} else {
+								event.reply("The worth of a warn has to be a number :no_entry:").queue();
+								return;
+							}
+						}
+						
+						Integer oldWorth = actionData.getInteger("worth");
+						
+						if (oldWorth != null && oldWorth == worth) {
+							event.reply("The warn worth is already set to **" + worth + "** :no_entry:").queue();
+							return;
+						}
+						
+						reply.append(" with a warn worth of **" + worth + "**");
+						updates.add(Updates.set("mute.action.worth", worth));
+					} else {
+						if (actionData.getString("type").equals(evasionType.toString())) {
+							event.reply("The punishment for mute evading is already set to that :no_entry:").queue();
+							return;
+						}
 					}
 					
-					Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("mute.action.type", evasionType.toString()), (result, writeException) -> {
+					Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.combine(updates), (result, writeException) -> {
 						if (writeException != null) {
 							writeException.printStackTrace();
 							
 							event.reply("Something went wrong :no_entry:").queue();
 						} else {
-							event.reply("The punishment for mute evading has been set to `" + evasionType.toString() + "`").queue();
+							event.reply(reply).queue();
 						}
 					});
 				}

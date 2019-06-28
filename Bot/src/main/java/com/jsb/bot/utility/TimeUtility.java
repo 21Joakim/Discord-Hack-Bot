@@ -1,5 +1,6 @@
 package com.jsb.bot.utility;
 
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 public class TimeUtility {
@@ -73,6 +74,28 @@ public class TimeUtility {
 		}
 		
 		return seconds;
+	}
+	
+	public static String secondsToTimeString(long time) {
+		ChronoUnit[] units = {ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.WEEKS, ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS};
+		StringBuilder timeString = new StringBuilder();
+		if (time > 0) {
+			for (int i = 0; i < units.length; i++) {
+				ChronoUnit unit = units[i];
+				
+				long value = time / unit.getDuration().toSeconds();
+				time = time % unit.getDuration().toSeconds();
+				
+				if (value > 0) {
+					String name = unit.toString().toLowerCase();
+					timeString.append(value + " " + name.substring(0, (value == 1 ? name.length() - 1 : name.length())) + " ");
+				}
+			}
+			
+			return timeString.toString().trim();
+		} else {
+			return time + " " + units[units.length - 1].toString().toLowerCase();
+		}
 	}
 	
 }
