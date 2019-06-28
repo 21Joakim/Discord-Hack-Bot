@@ -1,4 +1,6 @@
 .gradle
 build
-config
 bin
+
+config/*
+!config/example-config.json

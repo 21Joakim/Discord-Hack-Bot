@@ -1,0 +1,26 @@
+{
+	"token": "",
+	"clientId": "",
+	"clientSecret": "",
+	"mongodb": {
+		"host": "localhost",
+		"port": 27017,
+		"database": "jsb",
+		"username": null,
+		"password": null
+	},
+	"prefixes": [
+		"?"
+	],
+	"webserver": {
+		"enabled": true,
+		"port": 8080,
+		"jwtSecrets": [
+			"1",
+			"2",
+			"3",
+			"4",
+			"5"
+		]
+	}
+}
