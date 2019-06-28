@@ -31,6 +31,7 @@ public class CommandPrune extends CommandImpl {
 		super("prune");
 		
 		super.setDescription("Prune a set amount of messages with various filters");
+		super.setAliases("clear", "purge", "p", "c");
 		super.setAuthorDiscordPermissions(Permission.MESSAGE_MANAGE);
 		super.setBotDiscordPermissions(Permission.MESSAGE_MANAGE, Permission.MESSAGE_HISTORY);
 		
