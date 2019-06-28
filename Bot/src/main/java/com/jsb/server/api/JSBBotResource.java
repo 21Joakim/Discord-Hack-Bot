@@ -26,6 +26,7 @@ import org.json.JSONObject;
 import com.jsb.bot.core.JSBBot;
 import com.jsb.bot.database.Database;
 import com.jsb.bot.logger.LoggerType;
+import com.jsb.bot.module.ModuleDeveloper;
 import com.jsb.bot.utility.LoggerUtility;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
@@ -240,5 +241,17 @@ public class JSBBotResource {
 		}else{
 			return auth.response;
 		}
+	}
+	
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/commands")
+	public Response commands() {
+		return Response.ok()
+			.entity(new JSONObject()
+				.put("success", true)
+				.put("data", new JSONObject()
+					.put("commands", ModuleDeveloper.getAllCommandsAsJson(JSBBot.getCommandListener()))))
+			.build();
 	}
 }

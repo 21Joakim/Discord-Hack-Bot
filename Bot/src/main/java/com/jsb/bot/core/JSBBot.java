@@ -28,6 +28,8 @@ public class JSBBot {
 	
 	private static ShardManager shardManager;
 	
+	private static CommandListener commandListener;
+	
 	public static void main(String[] args) throws Exception {
 		try(FileInputStream stream = new FileInputStream(new File("./config/config.json"))) {
 			JSBBot.config = new JSONObject(new String(stream.readAllBytes(), StandardCharsets.UTF_8));
@@ -48,21 +50,22 @@ public class JSBBot {
 			throwable.printStackTrace();
 		});
 		
-		CommandListener listener = new CommandListener()
+		CommandListener commandListener = new CommandListener()
 			.addCommandStore(CommandStore.of("com.jsb.bot.command"))
 			.addCommandStore(CommandStore.of("com.jsb.bot.module"))
 			.addDevelopers(281465397214052352L, 190551803669118976L, 402557516728369153L)
 			.setDefaultPrefixes(JSBBot.config.getJSONArray("prefixes").toList().toArray(new String[0]));
 		
-		listener.removeDefaultPreExecuteChecks()
-			.addPreExecuteCheck(listener.defaultBotPermissionCheck)
-			.addPreExecuteCheck(listener.defaultNsfwCheck)
+		commandListener.removeDefaultPreExecuteChecks()
+			.addPreExecuteCheck(commandListener.defaultBotPermissionCheck)
+			.addPreExecuteCheck(commandListener.defaultNsfwCheck)
 			.addPreExecuteCheck((event, command) -> CheckUtility.checkPermissions(event));
 		
 		ShardManager shardManager = new DefaultShardManagerBuilder(JSBBot.config.getString("token"))
-			.addEventListeners(listener, PagedManager.get(), new LoggerListener(), new ModlogListener(), new MuteListener())
+			.addEventListeners(commandListener, PagedManager.get(), new LoggerListener(), new ModlogListener(), new MuteListener())
 			.build();
 		
+		JSBBot.commandListener = commandListener;
 		JSBBot.shardManager = shardManager;
 		
 		for(JDA shard : shardManager.getShards()) {
@@ -76,6 +79,10 @@ public class JSBBot {
 	
 	public static ShardManager getShardManager() {
 		return JSBBot.shardManager;
+	}
+	
+	public static CommandListener getCommandListener() {
+		return JSBBot.commandListener;
 	}
 	
 	public static JSONObject getConfig() {

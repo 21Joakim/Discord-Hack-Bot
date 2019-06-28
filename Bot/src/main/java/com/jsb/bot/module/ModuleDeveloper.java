@@ -4,12 +4,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.jockie.bot.core.command.Command;
 import com.jockie.bot.core.command.Command.Developer;
 import com.jockie.bot.core.command.ICommand;
 import com.jockie.bot.core.command.impl.CommandEvent;
+import com.jockie.bot.core.command.impl.CommandListener;
 import com.jockie.bot.core.module.Module;
 
 import net.dv8tion.jda.api.Permission;
@@ -17,10 +19,19 @@ import net.dv8tion.jda.api.Permission;
 @Module
 public class ModuleDeveloper {
 	
-	public static JSONObject getJsonDataFromCommand(ICommand command, boolean useCommandTrigger) {
+	public static JSONArray getAllCommandsAsJson(CommandListener listener) {
+		JSONArray commands = new JSONArray();
+		for (ICommand command : listener.getAllCommands()) {
+			commands.put(ModuleDeveloper.getCommandAsJson(command, true));
+		}
+		
+		return commands;
+	}
+	
+	public static JSONObject getCommandAsJson(ICommand command, boolean useCommandTrigger) {
 		List<JSONObject> subCommands = new ArrayList<>();
 		for (ICommand subCommand : command.getSubCommands()) {
-			subCommands.add(ModuleDeveloper.getJsonDataFromCommand(subCommand, false));
+			subCommands.add(ModuleDeveloper.getCommandAsJson(subCommand, false));
 		}
 		
 		return new JSONObject()
@@ -36,11 +47,8 @@ public class ModuleDeveloper {
 	@Command(value="json commands", description="Gives all the commands with their data in a json file")
 	@Developer
 	public void jsonCommands(CommandEvent event) {
-		List<JSONObject> json = new ArrayList<>();
-		for (ICommand command : event.getCommandListener().getAllCommands()) {
-			json.add(ModuleDeveloper.getJsonDataFromCommand(command, true));
-		}
+		JSONObject data = new JSONObject().put("commands", ModuleDeveloper.getAllCommandsAsJson(event.getCommandListener()));
 		
-		event.replyFile(new JSONObject().put("commands", json).toString().getBytes(StandardCharsets.UTF_8), "commands.json").queue();
+		event.replyFile(data.toString().getBytes(StandardCharsets.UTF_8), "commands.json").queue();
 	}
 }
