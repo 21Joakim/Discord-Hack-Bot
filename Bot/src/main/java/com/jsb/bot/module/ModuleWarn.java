@@ -2,8 +2,13 @@ package com.jsb.bot.module;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.bson.Document;
 
@@ -33,6 +38,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.exceptions.PermissionException;
+import net.dv8tion.jda.internal.utils.tuple.Pair;
 
 @Module
 public class ModuleWarn {
@@ -236,6 +242,8 @@ public class ModuleWarn {
 		
 		public CommandWarn() {
 			super("warn");
+			
+			super.setDescription("Warn a user about something they have done wrong");
 		}
 		
 		@AuthorPermissions(Permission.MESSAGE_MANAGE)
@@ -272,7 +280,35 @@ public class ModuleWarn {
 		}
 		
 		@AuthorPermissions(Permission.MANAGE_SERVER)
-		@Command("action set")
+		@Command(value="action reapply toggle", description="Toggle whether or not actions should re-apply if the user gets another warning")
+		public void actionReapply(CommandEvent event) {
+			Database.get().getGuildById(event.getGuild().getIdLong(), null, Projections.include("warning.reapply"), (data, exception) -> {
+				if(exception != null) {
+					exception.printStackTrace();
+					
+					event.reply("Something went wrong :no_entry:").queue();
+					
+					return;
+				}
+				
+				boolean current = data.getEmbedded(List.of("warning", "reapply"), false);
+				
+				Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("warning.reapply", !current), (result, exception2) -> {
+					if(exception2 != null) {
+						exception2.printStackTrace();
+						
+						event.reply("Something went wrong :no_entry:").queue();
+						
+						return;
+					}
+					
+					event.reply("I will " + (!current ? "now" : "no longer") + " re-apply actions").queue();
+				});
+			});
+		}
+		
+		@AuthorPermissions(Permission.MANAGE_SERVER)
+		@Command(value="action set", description="Set an action for when a user reaches a certain amount of warnings")
 		public void actionSet(CommandEvent event, @Argument(value="warning worth") int worth, @Argument(value="action", endless=true) String rawAction) {
 			String extraContent;
 			if(rawAction.contains(" ")) {
@@ -396,10 +432,10 @@ public class ModuleWarn {
 		});
 	}
 	
-	@Command("warnings")
-	public void warnings(CommandEvent event, @Argument(value="user", nullDefault=true) String user) {
-		if(user != null) {
-			Member member = ArgumentUtility.getMember(event.getGuild(), user);
+	@Command(value="warnings", description="View all or a member's warnings")
+	public void warnings(CommandEvent event, @Argument(value="member", nullDefault=true) String userStr) {
+		if(userStr != null) {
+			Member member = ArgumentUtility.getMember(event.getGuild(), userStr);
 			if(member == null) {
 				event.reply("I could not find that member :no_entry:").queue();
 				
@@ -409,7 +445,43 @@ public class ModuleWarn {
 			this.showUserWarnings(event, member);
 		}else{
 			Database.get().getWarnings(event.getGuild().getIdLong(), (warnings, exception) -> {
-				/* Show all warnings sorted by the person with most to the person with least */
+				if(exception != null) {
+					exception.printStackTrace();
+					
+					event.reply("Something went wrong :no_entry:").queue();
+					
+					return;
+				}
+				
+				Map<Long, Pair<AtomicInteger, AtomicInteger>> warningsPerUser = new HashMap<>();
+				for(Document warning : warnings) {
+					Pair<AtomicInteger, AtomicInteger> pair = warningsPerUser.computeIfAbsent(warning.getLong("userId"), $ -> Pair.of(new AtomicInteger(), new AtomicInteger()));
+					
+					/* Total warnings */
+					pair.getLeft().addAndGet(1);
+					
+					/* Total worth */
+					pair.getRight().addAndGet(warning.getInteger("worth"));
+				}
+				
+				List<Entry<Long, Pair<AtomicInteger, AtomicInteger>>> list = new ArrayList<>(warningsPerUser.entrySet());
+				list.removeIf(entry -> event.getShardManager().getUserById(entry.getKey()) == null);
+				list.sort((a, b) -> -Integer.compare(a.getValue().getRight().get(), b.getValue().getRight().get()));
+				
+				new PagedResult<>(list)
+					.setDisplayFunction(entry -> {
+						User user = event.getShardManager().getUserById(entry.getKey());
+						Pair<AtomicInteger, AtomicInteger> pair = entry.getValue();
+						
+						int warningCount = pair.getLeft().get();
+						int warningWorth = pair.getRight().get();
+						
+						return user.getAsTag() + " **" + warningCount + "** warning" + (warningCount == 1 ? "" : "s") + " (worth **" + warningWorth + "**)";
+					})
+					.onSelect(selectEvent -> {
+						this.showUserWarnings(event, event.getGuild().getMemberById(selectEvent.entry.getKey()));
+					})
+					.send(event);
 			});
 		}
 	}
