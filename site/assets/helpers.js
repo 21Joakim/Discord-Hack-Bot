@@ -1,3 +1,5 @@
+let uri = "http://jockie.ddns.net:8080"
+
 function appendChildren(x, arr) {
   arr.forEach(y => {
     x.appendChild(y);
@@ -32,4 +34,31 @@ function doSelection(val) {
   document.querySelectorAll(`[select]:not([select="${val}"]`).forEach(x => {
     x.classList.remove("selected");
   })
+}
+
+function GET(x, auth) {
+  let req = new XMLHttpRequest();
+  req.open("GET", x, [true]);
+  req.responseType = 'json';
+  if(auth) {
+    req.setRequestHeader("Authorization", auth);
+  }
+  req.send();
+  return req;
+}
+
+function addSelection() {
+  let val = location.hash.replace("#", "");
+  if(location.hash) {
+    doSelection(val);
+  }
+}
+
+function getUrlParam(x) {
+  let url = new URL(window.location.href);
+  return url.searchParams.get(x);
+}
+
+function removeParams(x) {
+  return x.replace(x.split('?')[1], "").replace("?", "");
 }

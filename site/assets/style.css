@@ -300,14 +300,24 @@ a {
 .profileHolder .left span {
   font: 500 16px whitney;
   line-height: 20px;
+  vertical-align: middle;
+}
+.profileHolder .left span.cut {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+  display: inline-block;
 }
 .profileHolder .right-content {
   font: 400 15px whitney;
   line-height: 18px;
   color: var(--red);
+  cursor: pointer;
 }
 .profileHolder .right:hover {
   text-decoration: underline;
+  text-decoration-color: var(--red);
 }
 /*------sections------*/
 .sectionWrapper-main {
