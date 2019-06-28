@@ -42,9 +42,9 @@ function getSection(x, data, connect) {
 
 function createModule(name, data) {
   if(name == sets[0]) {
-    createLoggers(data);
+    createLoggers(data.loggers);
   }else if(name == sets[3]) {
-    createWarnings(data);
+    createWarnings(data.warnings);
   }
 }
 
@@ -69,7 +69,7 @@ function createLoggers(data) {
 
   appendChildren(__sectionHeader, [__title2, __btn])
 
-  if(!data.length == 0) {
+  if(data.length != 0) {
     let __placeholders = createLoggerHolders(data);
     appendChildren(__catholder, [__title, __p, __sectionHeader, __placeholders]);
   }else{
@@ -139,7 +139,7 @@ function createWarnings(data) {
   let __p = createElm('p', ['sectionDescription'], text.paragraph); 
   __p.style = 'margin-bottom:40px;'
 
-  if(!data.length == 0) {
+  if(data.length != 0) {
     let __placeholders = createWarningsHolders(data);
     appendChildren(__catholder, [__title, __p, __placeholders]);
   }else{
