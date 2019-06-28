@@ -9,9 +9,11 @@ public class MiscUtility {
 
 	public static <Type> String join(Collection<Type> list, String joinBy) {
 		StringBuilder string = new StringBuilder();
+		
 		int index = 0;
 		for (Type object : list) {
 			string.append(object.toString());
+			
 			if (index != list.size() - 1) {
 				string.append(joinBy);
 			}
@@ -81,14 +83,11 @@ public class MiscUtility {
 	public static boolean isWord(String string) {
 	    char[] characterArray = string.toCharArray();
 	    for (int i = 0; i < characterArray.length; i++) {
-	        char character = characterArray[i];
-	        
-	        if (!Character.isLetter(character)) {
+	        if (!Character.isLetter(characterArray[i])) {
 	            return false;
 	        }
 	    }
 	    
 	    return true;
 	}
-
 }
