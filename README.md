@@ -1,5 +1,14 @@
-## what is this
-Not your so usual moderation bot (will edit this later kthnx)
+## What is this?
+A Discord moderation bot made for the Discord Hack Week 2019
+
+# Bot
+
+## Dependencies
+
+* Java 9
+* MongoDB
+
+# Website
 
 ## Required modules
 - handlebars
