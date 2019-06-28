@@ -2,6 +2,7 @@ package com.jsb.bot.mute;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,12 +22,17 @@ import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Updates;
 
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.audit.ActionType;
+import net.dv8tion.jda.api.audit.AuditLogEntry;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRoleAddEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRoleRemoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 public class MuteListener extends ListenerAdapter {
@@ -119,17 +125,20 @@ public class MuteListener extends ListenerAdapter {
 			Document muteData = data.get("mute", new Document());
 	
 			if (!muteData.isEmpty()) {
-				List<Document> users = muteData.getList("users", Document.class);
-				long muteRoleId = muteData.getLong("role");
+				List<Document> users = muteData.getList("users", Document.class, Collections.emptyList());
+				Long muteRoleId = muteData.getLong("role");
 				for (Document user : users) {
 					long userId = user.getLong("id");
-					long timeLeft = (user.getLong("length") + user.getLong("time")) - timestampNow;
-					if (timeLeft > 0) {
-						ScheduledFuture<?> executor = MuteListener.scheduledExector.schedule(() -> MuteListener.unmuteUser(guildId, userId, muteRoleId), timeLeft, TimeUnit.SECONDS);
-						
-						MuteListener.putExecutor(guildId, userId, executor);
-					} else {
-						MuteListener.unmuteUser(guildId, userId, muteRoleId);
+					Long muteLength = user.getLong("length");
+					if (muteLength != null) {
+						long timeLeft = (muteLength + user.getLong("time")) - timestampNow;
+						if (timeLeft > 0) {
+							ScheduledFuture<?> executor = MuteListener.scheduledExector.schedule(() -> MuteListener.unmuteUser(guildId, userId, muteRoleId), timeLeft, TimeUnit.SECONDS);
+							
+							MuteListener.putExecutor(guildId, userId, executor);
+						} else {
+							MuteListener.unmuteUser(guildId, userId, muteRoleId);
+						}
 					}
 				}
 			}
@@ -159,6 +168,107 @@ public class MuteListener extends ListenerAdapter {
 				executors.put(guildId, userExecutors);
 			}
 		}
+	}
+	
+	public void onGuildMemberRoleAdd(GuildMemberRoleAddEvent event) {
+		Database.get().getGuildById(event.getGuild().getIdLong(), null, Projections.include("mute.role", "mute.users"), (data, readException) -> {
+			if (readException != null) {
+				readException.printStackTrace();
+			} else {
+				Document muteData = data.get("mute", Document.class);
+				if (muteData != null) {
+					List<Document> users = muteData.getList("users", Document.class, new ArrayList<>());
+					Long muteRoleId = muteData.getLong("role");
+					for (Role role : event.getRoles()) {
+						if (muteRoleId == role.getIdLong()) {
+							if (event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+								event.getGuild().retrieveAuditLogs().type(ActionType.MEMBER_ROLE_UPDATE).queue(auditLogs -> {
+									User moderator = null;
+									String reason = null;
+									for (AuditLogEntry auditLog : auditLogs) {
+										if (auditLog.getTargetIdLong() == event.getUser().getIdLong()) {
+											moderator = auditLog.getUser();
+											reason = auditLog.getReason();
+											break;
+										}
+									}
+									
+									if (moderator != null && !moderator.equals(event.getJDA().getSelfUser())) {
+										for (Document user : users) {
+											if (user.getLong("id") == event.getUser().getIdLong()) {
+												users.remove(user);
+												break;
+											}
+										}
+										
+										users.add(new Document()
+												.append("id", event.getUser().getIdLong())
+												.append("time", Clock.systemUTC().instant().getEpochSecond())
+												.append("length", null));
+										
+										ModlogListener.createModlog(event.getGuild(), moderator, event.getUser(), reason, false, Action.MUTE);
+										
+										Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("mute.users", users), (result, writeException) -> {
+											if (writeException != null) {
+												writeException.printStackTrace();
+											}
+										});
+									}
+								});
+							}
+						}
+					}
+				}
+			}
+		});
+	}
+	
+	public void onGuildMemberRoleRemove(GuildMemberRoleRemoveEvent event) {
+		Database.get().getGuildById(event.getGuild().getIdLong(), null, Projections.include("mute.role", "mute.users"), (data, readException) -> {
+			if (readException != null) {
+				readException.printStackTrace();
+			} else {
+				Document muteData = data.get("mute", Document.class);
+				if (muteData != null) {
+					List<Document> users = muteData.getList("users", Document.class, new ArrayList<>());
+					Long muteRoleId = muteData.getLong("role");
+					for (Role role : event.getRoles()) {
+						if (muteRoleId == role.getIdLong()) {
+							if (event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+								event.getGuild().retrieveAuditLogs().type(ActionType.MEMBER_ROLE_UPDATE).queue(auditLogs -> {
+									User moderator = null;
+									String reason = null;
+									for (AuditLogEntry auditLog : auditLogs) {
+										if (auditLog.getTargetIdLong() == event.getUser().getIdLong()) {
+											moderator = auditLog.getUser();
+											reason = auditLog.getReason();
+											break;
+										}
+									}
+									
+									if (moderator != null && !moderator.equals(event.getJDA().getSelfUser())) {
+										for (Document user : users) {
+											if (user.getLong("id") == event.getUser().getIdLong()) {
+												users.remove(user);
+												break;
+											}
+										}
+										
+										ModlogListener.createModlog(event.getGuild(), moderator, event.getUser(), reason, false, Action.UNMUTE);
+										
+										Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("mute.users", users), (result, writeException) -> {
+											if (writeException != null) {
+												writeException.printStackTrace();
+											}
+										});
+									}
+								});
+							}
+						}
+					}
+				}
+			}
+		});
 	}
 	
 	public void onGuildMemberLeave(GuildMemberLeaveEvent event) {
@@ -206,7 +316,8 @@ public class MuteListener extends ListenerAdapter {
 				List<Document> users = muteData.getList("users", Document.class);
 				for (Document user : users) {
 					if (user.getLong("id") == event.getMember().getIdLong()) {
-						if (user.getLong("length") + user.getLong("time") > Clock.systemUTC().instant().getEpochSecond()) {
+						Long muteLength = user.getLong("length");
+						if (muteLength == null || muteLength + user.getLong("time") > Clock.systemUTC().instant().getEpochSecond()) {
 							String actionMessage = action.getString("message");
 							String actionTypeString = action.getString("type");
 							
