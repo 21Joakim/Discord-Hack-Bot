@@ -40,7 +40,7 @@ public class CommandLogger extends CommandImpl {
 	
 	@BotPermissions(Permission.MANAGE_WEBHOOKS)
 	@AuthorPermissions(Permission.MANAGE_SERVER)
-	@Command(value="add")
+	@Command(value="add", aliases="create", description="Add a new logger for a channel")
 	public void add(CommandEvent event, @Argument("channel") TextChannel channel) {
 		LoggerUtility.getLoggers(event.getGuild(), (loggers, exception) -> {
 			if(exception != null) {
@@ -95,7 +95,7 @@ public class CommandLogger extends CommandImpl {
 	}
 	
 	@AuthorPermissions(Permission.MANAGE_SERVER)
-	@Command("remove")
+	@Command(value="remove", description="Remove the logger from a channel")
 	public void remove(CommandEvent event, @Argument(value="channel", nullDefault=true) TextChannel channel) {
 		this.getLoggerPerform(event, channel, logger -> {
 			long channelId = logger.getLong("channelId");
@@ -205,7 +205,7 @@ public class CommandLogger extends CommandImpl {
 	}
 	
 	@AuthorPermissions(Permission.MANAGE_SERVER)
-	@Command(value="disable")
+	@Command(value="disable", description="Disable a logger")
 	public void disable(CommandEvent event, @Argument(value="channel", nullDefault=true) TextChannel channel) {
 		this.getLoggerPerform(event, channel, logger -> {
 			this.enableLogger(event, logger, false);
@@ -213,7 +213,7 @@ public class CommandLogger extends CommandImpl {
 	}
 	
 	@AuthorPermissions(Permission.MANAGE_SERVER)
-	@Command(value="enable")
+	@Command(value="enable", description="Enabled a logger")
 	public void enable(CommandEvent event, @Argument(value="channel", nullDefault=true) TextChannel channel) {
 		this.getLoggerPerform(event, channel, logger -> {
 			this.enableLogger(event, logger, true);
@@ -221,14 +221,14 @@ public class CommandLogger extends CommandImpl {
 	}
 	
 	@AuthorPermissions(Permission.MANAGE_SERVER)
-	@Command(value="toggle")
+	@Command(value="toggle", description="Toggle a logger on and off")
 	public void toggle(CommandEvent event, @Argument(value="channel", nullDefault=true) TextChannel channel) {
 		this.getLoggerPerform(event, channel, logger -> {
 			this.enableLogger(event, logger, logger.getBoolean("enabled", true));
 		});
 	}
 	
-	@Command(value="types")
+	@Command(value="types", description="See all the available logger types")
 	public void loggerTypes(CommandEvent event, @Argument(value="category", nullDefault=true) String categoryString) {
 		if(categoryString != null) {
 			try {
@@ -351,7 +351,7 @@ public class CommandLogger extends CommandImpl {
 	}
 	
 	@AuthorPermissions(Permission.MANAGE_SERVER)
-	@Command(value="disable event")
+	@Command(value="disable event", description="Disable an event or category of events for a logger")
 	public void disableEvent(CommandEvent event, @Argument(value="channel", nullDefault=true) TextChannel channel, @Argument(value="event", nullDefault=true) String type) {
 		if(type != null) {
 			EnumSet<LoggerType> types;
@@ -397,7 +397,7 @@ public class CommandLogger extends CommandImpl {
 	}
 	
 	@AuthorPermissions(Permission.MANAGE_SERVER)
-	@Command("enable event")
+	@Command(value="enable event", description="Enable an event or category of events for a logger")
 	public void enableEvent(CommandEvent event, @Argument(value="channel", nullDefault=true) TextChannel channel, @Argument(value="event", nullDefault=true) String type) {
 		if(type != null) {
 			EnumSet<LoggerType> types;
@@ -459,7 +459,7 @@ public class CommandLogger extends CommandImpl {
 	}
 	
 	@AuthorPermissions(Permission.MANAGE_SERVER)
-	@Command(value="enable all events")
+	@Command(value="enable all events", description="Enable all events for a logger")
 	public void enabledAllEvents(CommandEvent event, @Argument(value="channel", nullDefault=true) TextChannel channel) {
 		this.getLoggerPerform(event, channel, logger -> {
 			this.reset(event, logger, true);
@@ -467,7 +467,7 @@ public class CommandLogger extends CommandImpl {
 	}
 	
 	@AuthorPermissions(Permission.MANAGE_SERVER)
-	@Command(value="disable all events")
+	@Command(value="disable all events", description="Disable all events for a logger")
 	public void disableAllEvents(CommandEvent event, @Argument(value="channel", nullDefault=true) TextChannel channel) {
 		this.getLoggerPerform(event, channel, logger -> {
 			this.reset(event, logger, false);
