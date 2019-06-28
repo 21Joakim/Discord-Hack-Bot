@@ -44,7 +44,7 @@ function createElm(type, classes, text, att) {
   }
 
   if(text) {
-    __elm.innerText = text;
+    __elm.innerHTML = text;
   }
 
   if(att) {
