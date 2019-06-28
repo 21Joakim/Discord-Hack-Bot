@@ -31,6 +31,8 @@ import com.mongodb.client.model.Updates;
 import club.minnced.discord.webhook.WebhookClient;
 import club.minnced.discord.webhook.WebhookClientBuilder;
 import club.minnced.discord.webhook.send.WebhookEmbed;
+import club.minnced.discord.webhook.send.WebhookMessage;
+import club.minnced.discord.webhook.send.WebhookMessageBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
@@ -217,7 +219,12 @@ class LoggerClient {
 						.build();
 				});
 				
-				client.send(embeds)
+				WebhookMessage message = new WebhookMessageBuilder()
+					.addEmbeds(embeds)
+					.setAvatarUrl("https://cdn.discordapp.com/attachments/423589273120276484/594225220483547147/Logger.png")
+					.build();
+				
+				client.send(message)
 					.thenRun(() -> {
 						this.handleQueue(deque, 0);
 					})
