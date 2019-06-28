@@ -44,16 +44,6 @@ function showProfileHolder(x) {
 function addSelection() {
   let val = location.hash.replace("#", "");
   if(location.hash) {
-    let __def = document.getElementById("defaultContent");
-    if(__def) {
-      __def.style = "display:none;"
-    }
-
-    document.querySelectorAll(`[select="${val}"]`).forEach(x => {
-      x.classList.add("selected")
-    })
-    document.querySelectorAll(`[select]:not([select="${val}"]`).forEach(x => {
-      x.classList.remove("selected");
-    })
+    doSelection(val);
   }
 }

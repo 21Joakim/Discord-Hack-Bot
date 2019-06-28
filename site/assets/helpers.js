@@ -24,3 +24,12 @@ function createElmWtext(type, text, classes) {
   }
   return __elm;
 }
+
+function doSelection(val) {
+  document.querySelectorAll(`[select="${val}"]`).forEach(x => {
+    x.classList.add("selected")
+  })
+  document.querySelectorAll(`[select]:not([select="${val}"]`).forEach(x => {
+    x.classList.remove("selected");
+  })
+}

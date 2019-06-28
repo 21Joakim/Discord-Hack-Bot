@@ -4,6 +4,8 @@ let warnson = {"data":{"warnings":[{"createdAt":1561670154,"moderator":{"name":"
 
 getLoggers();
 getWarnings();
+doSelection("logging");
+
 
 function getLoggers() {
   let text = {

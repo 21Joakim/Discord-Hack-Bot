@@ -3,6 +3,7 @@ let commands = [{"categoryName":"cat1","commands":[{"name":"com1","aliases":["co
 
 //triggers
 addCategoryList();
+doSelection(commands[0].commands[0].name);
 
 //functions
 function addCategoryList() {
@@ -111,8 +112,8 @@ function createTable(x, sub) {
     let __tr2 = document.createElement("tr");
     let __tableBody = [
       createElmWtext("td", x[i].name),  
-      createElmWtext("td", x[i].description),  
-      createElmWtext("td", x[i].usage),  
+      createElmWtext("td", (x[i].description?x[i].description:"None")),  
+      createElmWtext("td", (x[i].usage?x[i].usage:"None")),  
       createElmWtext("td", (x[i].aliases?x[i].aliases:"None"))
     ]
   
