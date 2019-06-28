@@ -182,7 +182,7 @@ public class MuteListener extends ListenerAdapter {
 					for (Role role : event.getRoles()) {
 						if (muteRoleId == role.getIdLong()) {
 							if (event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
-								event.getGuild().retrieveAuditLogs().type(ActionType.MEMBER_ROLE_UPDATE).queue(auditLogs -> {
+								event.getGuild().retrieveAuditLogs().type(ActionType.MEMBER_ROLE_UPDATE).queueAfter(500, TimeUnit.MILLISECONDS, auditLogs -> {
 									User moderator = null;
 									String reason = null;
 									for (AuditLogEntry auditLog : auditLogs) {
@@ -235,7 +235,7 @@ public class MuteListener extends ListenerAdapter {
 					for (Role role : event.getRoles()) {
 						if (muteRoleId == role.getIdLong()) {
 							if (event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
-								event.getGuild().retrieveAuditLogs().type(ActionType.MEMBER_ROLE_UPDATE).queue(auditLogs -> {
+								event.getGuild().retrieveAuditLogs().type(ActionType.MEMBER_ROLE_UPDATE).queueAfter(500, TimeUnit.MILLISECONDS, auditLogs -> {
 									User moderator = null;
 									String reason = null;
 									for (AuditLogEntry auditLog : auditLogs) {
@@ -313,7 +313,7 @@ public class MuteListener extends ListenerAdapter {
 				Document muteData = data.get("mute", Document.class);
 				Document action = muteData.get("action", Document.class);
 				
-				List<Document> users = muteData.getList("users", Document.class);
+				List<Document> users = muteData.getList("users", Document.class, Collections.emptyList());
 				for (Document user : users) {
 					if (user.getLong("id") == event.getMember().getIdLong()) {
 						Long muteLength = user.getLong("duration");

@@ -13,10 +13,12 @@ import org.bson.conversions.Bson;
 
 import com.jockie.bot.core.argument.Argument;
 import com.jockie.bot.core.command.Command;
+import com.jockie.bot.core.command.ICommand;
 import com.jockie.bot.core.command.Command.AuthorPermissions;
 import com.jockie.bot.core.command.Command.BotPermissions;
 import com.jockie.bot.core.command.impl.CommandEvent;
 import com.jockie.bot.core.command.impl.CommandImpl;
+import com.jsb.bot.category.Category;
 import com.jsb.bot.database.Database;
 import com.jsb.bot.database.callback.Callback;
 import com.jsb.bot.logger.LoggerType;
@@ -36,6 +38,8 @@ public class CommandLogger extends CommandImpl {
 
 	public CommandLogger() {
 		super("logger");
+		
+		this.initialize(this);
 	}
 	
 	@BotPermissions(Permission.MANAGE_WEBHOOKS)
@@ -472,5 +476,13 @@ public class CommandLogger extends CommandImpl {
 		this.getLoggerPerform(event, channel, logger -> {
 			this.reset(event, logger, false);
 		});
+	}
+	
+	public void initialize(CommandImpl command) {
+		command.setCategory(Category.LOGGER);
+		
+		for (ICommand subCommand : command.getSubCommands()) {
+			this.initialize((CommandImpl) subCommand);
+		}
 	}
 }

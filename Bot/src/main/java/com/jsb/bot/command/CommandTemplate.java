@@ -11,9 +11,11 @@ import org.bson.Document;
 
 import com.jockie.bot.core.argument.Argument;
 import com.jockie.bot.core.command.Command;
+import com.jockie.bot.core.command.ICommand;
 import com.jockie.bot.core.command.Command.AuthorPermissions;
 import com.jockie.bot.core.command.impl.CommandEvent;
 import com.jockie.bot.core.command.impl.CommandImpl;
+import com.jsb.bot.category.Category;
 import com.jsb.bot.database.Database;
 import com.jsb.bot.paged.PagedResult;
 import com.mongodb.client.model.Projections;
@@ -28,6 +30,8 @@ public class CommandTemplate extends CommandImpl {
 	
 	public CommandTemplate() {
 		super("template");
+		
+		this.initialize(this);
 	}
 	
 	@AuthorPermissions(Permission.MANAGE_SERVER)
@@ -130,5 +134,13 @@ public class CommandTemplate extends CommandImpl {
 				})
 				.send(event);
 		});
+	}
+	
+	public void initialize(CommandImpl command) {
+		command.setCategory(Category.TEMPLATE);
+		
+		for (ICommand subCommand : command.getSubCommands()) {
+			this.initialize((CommandImpl) subCommand);
+		}
 	}
 }

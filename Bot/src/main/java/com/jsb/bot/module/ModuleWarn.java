@@ -15,9 +15,12 @@ import org.bson.Document;
 import com.jockie.bot.core.argument.Argument;
 import com.jockie.bot.core.command.Command;
 import com.jockie.bot.core.command.Command.AuthorPermissions;
+import com.jockie.bot.core.command.ICommand;
+import com.jockie.bot.core.command.Initialize;
 import com.jockie.bot.core.command.impl.CommandEvent;
 import com.jockie.bot.core.command.impl.CommandImpl;
 import com.jockie.bot.core.module.Module;
+import com.jsb.bot.category.Category;
 import com.jsb.bot.database.Database;
 import com.jsb.bot.database.callback.Callback;
 import com.jsb.bot.modlog.Action;
@@ -483,6 +486,15 @@ public class ModuleWarn {
 					})
 					.send(event);
 			});
+		}
+	}
+	
+	@Initialize(all=true)
+	public void initialize(CommandImpl command) {
+		command.setCategory(Category.WARN);
+		
+		for (ICommand subCommand : command.getSubCommands()) {
+			this.initialize((CommandImpl) subCommand);
 		}
 	}
 }

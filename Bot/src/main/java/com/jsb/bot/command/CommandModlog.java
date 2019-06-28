@@ -11,8 +11,10 @@ import com.jockie.bot.core.argument.Argument;
 import com.jockie.bot.core.command.Command;
 import com.jockie.bot.core.command.Command.AuthorPermissions;
 import com.jockie.bot.core.command.Command.BotPermissions;
+import com.jockie.bot.core.command.ICommand;
 import com.jockie.bot.core.command.impl.CommandEvent;
 import com.jockie.bot.core.command.impl.CommandImpl;
+import com.jsb.bot.category.Category;
 import com.jsb.bot.database.Database;
 import com.jsb.bot.modlog.Action;
 import com.jsb.bot.utility.ArgumentUtility;
@@ -33,6 +35,8 @@ public class CommandModlog extends CommandImpl {
 		super("modlog");
 		
 		super.setDescription("Set up modlogs in the server to easily log all mod actions which occur in the server");
+		
+		this.initialize(this);
 	}
 	
 	@Command(value="toggle", description="Enable/disable modlogs in the server depending on its current state")
@@ -311,6 +315,14 @@ public class CommandModlog extends CommandImpl {
 				event.reply(embed.build()).queue();
 			}
 		});
+	}
+	
+	public void initialize(CommandImpl command) {
+		command.setCategory(Category.MODLOG);
+		
+		for (ICommand subCommand : command.getSubCommands()) {
+			this.initialize((CommandImpl) subCommand);
+		}
 	}
 	
 }

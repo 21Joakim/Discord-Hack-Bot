@@ -1,9 +1,15 @@
 package com.jsb.bot.command;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import com.jockie.bot.core.argument.Argument;
+import com.jockie.bot.core.category.impl.CategoryImpl;
 import com.jockie.bot.core.command.ICommand;
 import com.jockie.bot.core.command.impl.CommandEvent;
 import com.jockie.bot.core.command.impl.CommandImpl;
+import com.jsb.bot.category.Category;
 import com.jsb.bot.paged.PagedResult;
 import com.jsb.bot.utility.ArgumentUtility;
 
@@ -21,10 +27,23 @@ public class CommandHelp extends CommandImpl {
 	
 	public void onCommand(CommandEvent event, @Argument(value="command", endless=true, nullDefault=true) String commandArgument) {
 		if (commandArgument == null) {
-			PagedResult<ICommand> paged = new PagedResult<>(event.getCommandListener().getAllCommands())
-					.setEntriesPerPage(20)
+			PagedResult<CategoryImpl> paged = new PagedResult<>(Arrays.asList(Category.ALL))
+					.setEntriesPerPage(1)
 					.setListIndexes(false)
-					.setDisplayFunction(command -> "`" + command.getCommandTrigger() + "` - " + command.getDescription());
+					.setDisplayFunction(category -> {
+						StringBuilder page = new StringBuilder();
+						page.append("**" + category.getName() + "**\n\n");
+						
+						List<ICommand> commands = new ArrayList<>(category.getCommands());
+						commands.sort((a, b) -> a.getCommandTrigger().compareTo(b.getCommandTrigger()));
+						for (ICommand command : commands) {
+							if (!command.isPassive()) {
+								page.append("`" + command.getCommandTrigger() + "` - " + command.getDescription() + "\n");
+							}
+						}
+						
+						return page.toString();
+					});
 			
 			paged.send(event);
 		} else {

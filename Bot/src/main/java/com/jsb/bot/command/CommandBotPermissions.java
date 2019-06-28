@@ -13,6 +13,7 @@ import com.jockie.bot.core.command.Command.AuthorPermissions;
 import com.jockie.bot.core.command.ICommand;
 import com.jockie.bot.core.command.impl.CommandEvent;
 import com.jockie.bot.core.command.impl.CommandImpl;
+import com.jsb.bot.category.Category;
 import com.jsb.bot.database.Database;
 import com.jsb.bot.utility.ArgumentUtility;
 import com.jsb.bot.utility.MiscUtility;
@@ -30,6 +31,8 @@ public class CommandBotPermissions extends CommandImpl {
 		
 		super.setAliases("botpermissions", "bot perms", "botperms");
 		super.setDescription("Add permissions to roles/users which only apply on the bot");
+		
+		this.initialize(this);
 	}
 	
 	@Command(value="add", description="Add permission(s) to a user/role which only applies on the bot")
@@ -599,6 +602,14 @@ public class CommandBotPermissions extends CommandImpl {
 			});
 		}
 		
+	}
+	
+	public void initialize(CommandImpl command) {
+		command.setCategory(Category.BOT_PERMISSIONS);
+		
+		for (ICommand subCommand : command.getSubCommands()) {
+			this.initialize((CommandImpl) subCommand);
+		}
 	}
 	
 }

@@ -7,12 +7,14 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.jockie.bot.core.category.impl.CategoryImpl;
 import com.jockie.bot.core.command.Command;
 import com.jockie.bot.core.command.Command.Developer;
 import com.jockie.bot.core.command.ICommand;
 import com.jockie.bot.core.command.impl.CommandEvent;
 import com.jockie.bot.core.command.impl.CommandListener;
 import com.jockie.bot.core.module.Module;
+import com.jsb.bot.category.Category;
 
 import net.dv8tion.jda.api.Permission;
 
@@ -21,11 +23,22 @@ public class ModuleDeveloper {
 	
 	public static JSONArray getAllCommandsAsJson(CommandListener listener) {
 		JSONArray commands = new JSONArray();
-		for (ICommand command : listener.getAllCommands()) {
-			commands.put(ModuleDeveloper.getCommandAsJson(command, true));
+		for (CategoryImpl category : Category.ALL) {
+			commands.put(ModuleDeveloper.getCategoryAsJson(category));
 		}
 		
 		return commands;
+	}
+	
+	public static JSONObject getCategoryAsJson(CategoryImpl category) {
+		JSONArray commands = new JSONArray();
+		for (ICommand command : category.getCommands()) {
+			commands.put(ModuleDeveloper.getCommandAsJson(command, true));
+		}
+		
+		return new JSONObject()
+				.put("category", category.getName())
+				.put("commands", commands);
 	}
 	
 	public static JSONObject getCommandAsJson(ICommand command, boolean useCommandTrigger) {
@@ -47,7 +60,7 @@ public class ModuleDeveloper {
 	@Command(value="json commands", description="Gives all the commands with their data in a json file")
 	@Developer
 	public void jsonCommands(CommandEvent event) {
-		JSONObject data = new JSONObject().put("commands", ModuleDeveloper.getAllCommandsAsJson(event.getCommandListener()));
+		JSONObject data = new JSONObject().put("categories", ModuleDeveloper.getAllCommandsAsJson(event.getCommandListener()));
 		
 		event.replyFile(data.toString().getBytes(StandardCharsets.UTF_8), "commands.json").queue();
 	}
