@@ -13,6 +13,7 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.jsb.bot.core.JSBBot;
 import com.jsb.server.api.JSBBotResource;
 import com.jsb.server.api.UserResource;
+import com.jsb.server.filter.CORSFilter;
 import com.jsb.server.serializer.JSONObjectDeserializer;
 import com.jsb.server.serializer.JSONObjectSerializer;
 
@@ -44,6 +45,7 @@ public class Webserver {
 		ResourceConfig config = new ResourceConfig();
 		config.register(JSBBotResource.class);
 		config.register(UserResource.class);
+		config.register(CORSFilter.class);
 		config.register(provider);
 		
 		contextHandler.addServlet(new ServletHolder(new ServletContainer(config)), "/api/*");
