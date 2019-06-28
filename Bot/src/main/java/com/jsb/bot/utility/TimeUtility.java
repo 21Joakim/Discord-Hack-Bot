@@ -40,6 +40,7 @@ public class TimeUtility {
 				}
 			} else if (MiscUtility.isWord(word)) {
 				word = word.toLowerCase();
+				
 				if (lastNumber == null) {
 					throw new IllegalArgumentException("Incorrect time format, a good example would be `1d 5h 20m 36s`");
 				} else {
@@ -50,11 +51,13 @@ public class TimeUtility {
 			} else {
 				word = word.toLowerCase();
 				char[] characters = word.toCharArray();
+				
 				int index = 0;
 				for (int i = 0; i < characters.length; i++) {
 					char character = characters[i];
 					if (!Character.isDigit(character)) {
 						index = i;
+						
 						break;
 					}
 				}
@@ -63,8 +66,8 @@ public class TimeUtility {
 					throw new IllegalArgumentException("Incorrect time format, a good example would be `1d 5h 20m 36s`");
 				} else {
 					long number = Long.parseLong(word.substring(0, index));
-					String timeSuffix = word.substring(index);
-					seconds += TimeUtility.getCorrectSeconds(number, timeSuffix);
+					
+					seconds += TimeUtility.getCorrectSeconds(number, word.substring(index));
 				}
 			}
 		}
@@ -97,5 +100,4 @@ public class TimeUtility {
 			return time + " " + units[units.length - 1].toString().toLowerCase();
 		}
 	}
-	
 }

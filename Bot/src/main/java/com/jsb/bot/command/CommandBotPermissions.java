@@ -332,10 +332,10 @@ public class CommandBotPermissions extends CommandImpl {
 					}
 					
 					commands.add(new Document()
-							.append("id", command.getCommandTrigger())
-							.append("permissions", rawPermissions)
-							.append("bypassUsers", new ArrayList<>())
-							.append("bypassRoles", new ArrayList<>()));
+						.append("id", command.getCommandTrigger())
+						.append("permissions", rawPermissions)
+						.append("bypassUsers", new ArrayList<>())
+						.append("bypassRoles", new ArrayList<>()));
 					
 					Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("botPermissions.commands", commands), (result, writeException) -> {
 						if (writeException != null) {
@@ -418,10 +418,10 @@ public class CommandBotPermissions extends CommandImpl {
 					EnumSet<Permission> newPermissions = Permission.getPermissions(newRawPermissions - oldRawPermissions);
 					
 					commands.add(new Document()
-							.append("id", command.getCommandTrigger())
-							.append("permissions", newRawPermissions)
-							.append("bypassUsers", new ArrayList<>())
-							.append("bypassRoles", new ArrayList<>()));
+						.append("id", command.getCommandTrigger())
+						.append("permissions", newRawPermissions)
+						.append("bypassUsers", new ArrayList<>())
+						.append("bypassRoles", new ArrayList<>()));
 					
 					Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("botPermissions.commands", commands), (result, writeException) -> {
 						if (writeException != null) {
@@ -577,16 +577,16 @@ public class CommandBotPermissions extends CommandImpl {
 					
 					if (role != null) {
 						commands.add(new Document()
-								.append("id", command.getCommandTrigger())
-								.append("permissions", null)
-								.append("bypassRoles", List.of(role.getIdLong()))
-								.append("bypassUsers", new ArrayList<>()));
+							.append("id", command.getCommandTrigger())
+							.append("permissions", null)
+							.append("bypassRoles", List.of(role.getIdLong()))
+							.append("bypassUsers", new ArrayList<>()));
 					} else if (member != null) {
 						commands.add(new Document()
-								.append("id", command.getCommandTrigger())
-								.append("permissions", null)
-								.append("bypassRoles", new ArrayList<>())
-								.append("bypassUsers", List.of(member.getIdLong())));
+							.append("id", command.getCommandTrigger())
+							.append("permissions", null)
+							.append("bypassRoles", new ArrayList<>())
+							.append("bypassUsers", List.of(member.getIdLong())));
 					}
 					
 					Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("botPermissions.commands", commands), (result, writeException) -> {
@@ -611,5 +611,4 @@ public class CommandBotPermissions extends CommandImpl {
 			this.initialize((CommandImpl) subCommand);
 		}
 	}
-	
 }

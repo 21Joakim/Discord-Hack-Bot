@@ -139,7 +139,7 @@ public class CommandTemplate extends CommandImpl {
 	public void initialize(CommandImpl command) {
 		command.setCategory(Category.TEMPLATE);
 		
-		for (ICommand subCommand : command.getSubCommands()) {
+		for(ICommand subCommand : command.getSubCommands()) {
 			this.initialize((CommandImpl) subCommand);
 		}
 	}

@@ -18,6 +18,7 @@ import com.jsb.bot.database.Database;
 import com.jsb.bot.database.callback.Callback;
 import com.jsb.bot.modlog.Action;
 import com.jsb.bot.modlog.ModlogListener;
+import com.jsb.bot.module.ModuleWarn;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Updates;
 
@@ -340,7 +341,11 @@ public class MuteListener extends ListenerAdapter {
 									event.getGuild().addRoleToMember(event.getMember(), muteRole).reason(actionMessage == null ? "Mute Evasion" : actionMessage).queue();
 								}
 							} else if (actionType.equals(MuteEvasionType.WARN_ON_JOIN)) {
-								//warn user
+								ModuleWarn.doWarn(event.getGuild(), event.getJDA().getSelfUser(), event.getMember().getUser(), actionMessage == null ? "Mute Evasion" : actionMessage, action.getInteger("worth"), (warning, exception) -> {
+									if (warning.getActionTaken() != null) {
+										ModlogListener.createModlog(event.getGuild(), event.getJDA().getSelfUser(), event.getMember().getUser(), actionMessage == null ? "Mute Evasion" : actionMessage, false, Action.valueOf(warning.getActionTaken().getString("action").toUpperCase()));
+									}
+								});
 							}
 						} else {
 							users.remove(user);
@@ -362,5 +367,4 @@ public class MuteListener extends ListenerAdapter {
 			}
 		});
 	}
-	
 }

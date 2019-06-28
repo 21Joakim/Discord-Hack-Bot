@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.jockie.bot.core.argument.Argument;
-import com.jockie.bot.core.category.impl.CategoryImpl;
 import com.jockie.bot.core.command.ICommand;
 import com.jockie.bot.core.command.impl.CommandEvent;
 import com.jockie.bot.core.command.impl.CommandImpl;
@@ -27,25 +26,24 @@ public class CommandHelp extends CommandImpl {
 	
 	public void onCommand(CommandEvent event, @Argument(value="command", endless=true, nullDefault=true) String commandArgument) {
 		if (commandArgument == null) {
-			PagedResult<CategoryImpl> paged = new PagedResult<>(Arrays.asList(Category.ALL))
-					.setEntriesPerPage(1)
-					.setListIndexes(false)
-					.setDisplayFunction(category -> {
-						StringBuilder page = new StringBuilder();
-						page.append("**" + category.getName() + "**\n\n");
-						
-						List<ICommand> commands = new ArrayList<>(category.getCommands());
-						commands.sort((a, b) -> a.getCommandTrigger().compareTo(b.getCommandTrigger()));
-						for (ICommand command : commands) {
-							if (!command.isPassive()) {
-								page.append("`" + command.getCommandTrigger() + "` - " + command.getDescription() + "\n");
-							}
+			new PagedResult<>(Arrays.asList(Category.ALL))
+				.setEntriesPerPage(1)
+				.setListIndexes(false)
+				.setDisplayFunction(category -> {
+					StringBuilder page = new StringBuilder();
+					page.append("**" + category.getName() + "**\n\n");
+					
+					List<ICommand> commands = new ArrayList<>(category.getCommands());
+					commands.sort((a, b) -> a.getCommandTrigger().compareTo(b.getCommandTrigger()));
+					for (ICommand command : commands) {
+						if (!command.isPassive()) {
+							page.append("`" + command.getCommandTrigger() + "` - " + command.getDescription() + "\n");
 						}
-						
-						return page.toString();
-					});
-			
-			paged.send(event);
+					}
+					
+					return page.toString();
+				})
+				.send(event);
 		} else {
 			ICommand command = ArgumentUtility.getCommand(event.getCommandListener(), commandArgument);
 			if (command == null) {
@@ -89,5 +87,4 @@ public class CommandHelp extends CommandImpl {
 			event.reply(embed.build()).queue();
 		}
 	}
-	
 }
