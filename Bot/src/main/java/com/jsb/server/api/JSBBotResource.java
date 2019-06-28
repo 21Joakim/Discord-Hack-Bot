@@ -162,7 +162,7 @@ public class JSBBotResource {
 				TextChannel channel = JSBBot.getShardManager().getTextChannelById(channelId);
 				
 				loggerData.put("channel", new JSONObject()
-					.put("id", channelId)
+					.put("id", String.valueOf(channelId))
 					.put("name", channel.getName()));
 				
 				loggerData.put("enabled", logger.getBoolean("enabled"));
@@ -218,11 +218,11 @@ public class JSBBotResource {
 					JSONObject jsonWarning = new JSONObject()
 						.put("id", warning.getObjectId("_id").toString())
 						.put("moderator", new JSONObject()
-							.put("id", moderatorId)
+							.put("id", String.valueOf(moderatorId))
 							.put("name", moderator != null ? moderator.getName() : null)
 							.put("discriminator", moderator != null ? moderator.getDiscriminator() : null))
 						.put("user", new JSONObject()
-							.put("id", userId)
+							.put("id", String.valueOf(userId))
 							.put("name", targetUser != null ? targetUser.getName() : null)
 							.put("discriminator", targetUser != null ? targetUser.getDiscriminator() : null))
 						.put("createdAt", warning.getLong("createdAt"))

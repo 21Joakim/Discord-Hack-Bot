@@ -77,7 +77,8 @@ public class UserResource {
 					if(guild.getMember(user).hasPermission(Permission.MANAGE_SERVER)) {
 						guilds.put(new JSONObject()
 							.put("name", guild.getName())
-							.put("iconUrl", guild.getIconUrl()));
+							.put("iconUrl", guild.getIconUrl())
+							.put("id", guild.getId()));
 					}
 				}
 				
@@ -97,7 +98,6 @@ public class UserResource {
 				try(okhttp3.Response response = this.client.newCall(request).execute()) {
 					if(response.isSuccessful()) {
 						JSONObject me = new JSONObject(response.body().string());
-						System.out.println(me);
 						
 						data.put("id", me.getString("id"))
 							.put("name", me.getString("username"))
@@ -130,8 +130,6 @@ public class UserResource {
 			return Response.status(400).entity("Missing code").build();
 		}
 		
-		// https://discordapp.com/api/oauth2/authorize?client_id=593709124261511170&redirect_uri=http%3A%2F%2Fjockie.ddns.net%3A8080%2Fapi%2Fuser%2Fauth&response_type=code&scope=identify%20guilds
-		
 		Request request = new Request.Builder()
 			.url("https://discordapp.com/api/v6/oauth2/token")
 			.post(new FormBody.Builder()
@@ -139,7 +137,7 @@ public class UserResource {
 				.add("client_secret", JSBBot.getConfig("clientSecret", String.class))
 				.add("grant_type", "authorization_code")
 				.add("code", code)
-				.add("redirect_uri", "http://jockie.ddns.net:8080/api/user/auth")
+				.add("redirect_uri", JSBBot.getConfig("webserver.discordRedirectUri"))
 				.add("scope", "identify guilds")
 				.build())
 			.build();

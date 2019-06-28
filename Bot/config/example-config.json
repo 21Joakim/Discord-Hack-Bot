@@ -15,6 +15,7 @@
 	"webserver": {
 		"enabled": true,
 		"port": 8080,
+		"discordRedirectUri": "",
 		"jwtSecrets": [
 			"1",
 			"2",
