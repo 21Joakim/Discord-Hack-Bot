@@ -38,6 +38,7 @@ import com.jsb.bot.utility.TimeUtility;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Updates;
 
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Guild.Ban;
@@ -519,6 +520,18 @@ public class ModuleBasic {
 					}
 				});
 			});
+		}
+		
+		@Command(value="evasion types", description="Shows all the available mute evasion types")
+		@BotPermissions({Permission.MESSAGE_EMBED_LINKS})
+		public void evasionTypes(CommandEvent event) {
+			EmbedBuilder embed = new EmbedBuilder();
+			embed.setAuthor("Mute Evasion Types", null, event.getGuild().getIconUrl());
+			for (MuteEvasionType evasionType : MuteEvasionType.values()) {
+				embed.addField(evasionType.toString(), evasionType.getDescription(), false);
+			}
+			
+			event.reply(embed.build()).queue();
 		}
 		
 	}
