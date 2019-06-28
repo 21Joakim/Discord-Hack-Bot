@@ -24,6 +24,7 @@ import com.jsb.bot.category.Category;
 import com.jsb.bot.database.Database;
 import com.jsb.bot.database.callback.Callback;
 import com.jsb.bot.modlog.Action;
+import com.jsb.bot.modlog.ModlogListener;
 import com.jsb.bot.mute.MuteListener;
 import com.jsb.bot.paged.PagedResult;
 import com.jsb.bot.utility.ArgumentUtility;
@@ -145,7 +146,36 @@ public class ModuleWarn {
 						
 						if(guild.getSelfMember().canInteract(muteRole)) {
 							guild.addRoleToMember(member, muteRole).queue($ -> {
-								callback.onResult(null, null);
+								Database.get().getGuildById(guild.getIdLong(), null, Projections.include("mute.users"), (data, readException) -> {
+									if (readException != null) {
+										readException.printStackTrace();
+										
+										callback.onResult(null, new IllegalStateException("Something went wrong"));
+									} else {
+										List<Document> users = data.getEmbedded(List.of("mute", "users"), new ArrayList<>());
+										for (Document user : users) {
+											if (user.getLong("id") == member.getIdLong()) {
+												users.remove(user);
+												break;
+											}
+										}
+										
+										users.add(new Document()
+												.append("id", member.getIdLong())
+												.append("duration", null)
+												.append("time", Clock.systemUTC().instant().getEpochSecond()));
+										
+										Database.get().updateGuildById(guild.getIdLong(), Updates.set("mute.users", users), (result, writeException) -> {
+											if (writeException != null) {
+												writeException.printStackTrace();
+												
+												callback.onResult(null, new IllegalStateException("Something went wrong"));
+											} else {
+												callback.onResult(null, null);
+											}
+										});
+									}
+								});
 							}, reason -> {
 								callback.onResult(null, reason);
 							});
@@ -279,6 +309,8 @@ public class ModuleWarn {
 				}
 				
 				event.reply(message).queue();
+				
+				ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, Action.valueOf(warning.getActionTaken().getString("action").toUpperCase()));
 			});
 		}
 		
