@@ -1,0 +1,24 @@
+<div class="sectionWrapper left" id="sectionNav">
+  <img class="sectionImg" src="{{path}}assets/hack_wump.png">
+  <div class="sectionContent categoryContent">
+    <div class="categoryBlock">
+      <ul class="categoryContainer">
+        <div class="categoryName">settings</div>
+        <li class="categoryParent" select="logger" onclick="getSection(this, '', true)"><a href="#logger">logger</a></li>
+        <li class="categoryParent soon" select="templates" onclick="getSection(this, '', true)"><a href="#templates">templates</a></li>
+        <li class="categoryParent soon" select="filtering" onclick="getSection(this, '', true)"><a href="#filtering">filtering</a></li>
+      </ul>
+    </div>
+    <div class="categoryBlock">
+      <ul class="categoryContainer">
+        <div class="categoryName">logs</div>
+        <li class="categoryParent" select="warnings" onclick="getSection(this, '', true)"><a href="#warnings">warnings</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div id="overlay" onclick="showNav()"></div>
+<div class="sectionWrapper">
+  <div class="sectionContent" id="manageContent">
+  </div>
+</div>

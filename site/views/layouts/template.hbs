@@ -4,8 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{title}}</title>
-  <link rel="stylesheet" type="text/css" href="./assets/style.css"/>
-  <script src="assets/helpers.js"></script>
+  <link rel="stylesheet" type="text/css" href="{{path}}assets/style.css"/>
+  <script src="{{path}}assets/helpers.js"></script>
+  {{#if secure}}
+  <script>
+    if(!TOKEN) {
+      window.location.href = "https://discordapp.com/api/oauth2/authorize?client_id=593709124261511170&redirect_uri=http%3A%2F%2F178.86.247.124%2F&response_type=code&scope=identify%20guilds"
+    }
+  </script>
+  {{/if}}
+</script>
 </head>
 <body>
   <header class="navWrapper-main">
@@ -14,23 +22,22 @@
         <span></span>
       </div>
       <div class="logoWrapper-main">
-        <a class="logoWrapper" href="./index.html">
+        <a class="logoWrapper" href="/">
           <img class="logo" src="https://discordapp.com/assets/5c5bb53489a0a9f602df0a24c5981523.svg">
           <div class="logoText twhite">a discord bot</div>
         </a>
       </div>
       <ul class="navListWrapper">
-        <li><a href="./servers.html">servers</a></li>
-        <li><a href="./commands.html">commands</a></li>
+        <li><a href="/servers">servers</a></li>
+        <li><a href="/commands">commands</a></li>
       </ul>
       <div class="profileWrapper" id="profile">
-        <a class="btn small white" href="url">Login</a>
+        <a class="btn small white" href="https://discordapp.com/api/oauth2/authorize?client_id=593709124261511170&redirect_uri=http%3A%2F%2F178.86.247.124%2F&response_type=code&scope=identify%20guilds">Login</a>
       </div>
     </div>
   </header>
   <section class="sectionWrapper-main" id="dashboard">
-    {{{dashboard}}}
+    {{{body}}}
   </section>
-  <script src="assets/index.js"></script>
 </body>
 </html>
