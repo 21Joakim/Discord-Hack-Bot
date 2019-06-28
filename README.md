@@ -11,6 +11,7 @@ A Discord moderation bot made for the Discord Hack Week 2019
   * Have up to 5 loggers each in a different channel
   * Each logger can have their own events, but only a maximum of 1 of each type of event across all loggers to prevent abuse and spam
   * Disable/enable the events you want
+  * Currently missing two events, `message edit` and `message delete`
 
 * Mod logs
   * Ability to delete modlogs
@@ -19,7 +20,7 @@ A Discord moderation bot made for the Discord Hack Week 2019
   
 * Warning system
   * Actions when they reach `x` amount of warnings
-  * Optional option to have the actions re-apply for every new warning
+  * Optional option to have the actions re-apply for every new warning until they reach a new action
 
 * Template system
   * Have preset reasons so you can quickly specify a reason or just be lazy, like so `kick @Joakim t:spam` or `kick @Joakim template:spam`, you can also add additional content or even other templates `kick @Joakim Being a meanie, t:spam and t:tos` 
@@ -32,6 +33,12 @@ A Discord moderation bot made for the Discord Hack Week 2019
   * `prune bots` to prune any bot messages in the past 100 messages
   
 * Mute command with mute evasion actions
+  * Available actions
+    * `ban on leave` - If a user is muted and they leave they will be banned
+    * `ban on join` - If a user leaves and then joins the server while being muted they will be banned, provided the mute hasn't ran out in that time
+    * `warn on join` - If a user leaves and then joins the server while being muted they will be warned a set value, provided the mute hasn't ran out in that time
+    * `remute on join` - If a user leaves and then joins the server while being muted they will be muted again, provided the mute hasn't ran out in that time
+    * `kick on join` - If a user leaves and then joins the server while being muted they will be kicked, provided the mute hasn't ran out in that time
 
 * Bot permissions
   * Give a user or role Discord permissions for the bot, this can be used to limit the permissions they have while still giving them the ability to moderate
