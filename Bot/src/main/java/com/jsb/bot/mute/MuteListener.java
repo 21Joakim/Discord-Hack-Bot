@@ -365,5 +365,4 @@ public class MuteListener extends ListenerAdapter {
 			}
 		});
 	}
-	
 }

@@ -37,8 +37,8 @@ public class ModuleDeveloper {
 		}
 		
 		return new JSONObject()
-				.put("category", category.getName())
-				.put("commands", commands);
+			.put("category", category.getName())
+			.put("commands", commands);
 	}
 	
 	public static JSONObject getCommandAsJson(ICommand command, boolean useCommandTrigger) {

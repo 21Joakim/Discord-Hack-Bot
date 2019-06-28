@@ -481,7 +481,7 @@ public class CommandLogger extends CommandImpl {
 	public void initialize(CommandImpl command) {
 		command.setCategory(Category.LOGGER);
 		
-		for (ICommand subCommand : command.getSubCommands()) {
+		for(ICommand subCommand : command.getSubCommands()) {
 			this.initialize((CommandImpl) subCommand);
 		}
 	}

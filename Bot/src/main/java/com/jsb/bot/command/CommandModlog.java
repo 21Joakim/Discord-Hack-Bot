@@ -324,5 +324,4 @@ public class CommandModlog extends CommandImpl {
 			this.initialize((CommandImpl) subCommand);
 		}
 	}
-	
 }

@@ -128,7 +128,7 @@ public class Database {
 		this.queryExecutor.submit(() -> {
 			try {
 				callback.onResult(this.deleteModlogCase(guildId, id), null);
-			} catch(Throwable e) {
+			}catch(Throwable e) {
 				callback.onResult(null, e);
 			}
 		});

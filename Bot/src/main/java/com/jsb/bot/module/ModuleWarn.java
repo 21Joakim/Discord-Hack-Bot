@@ -153,24 +153,24 @@ public class ModuleWarn {
 										callback.onResult(null, new IllegalStateException("Something went wrong"));
 									} else {
 										List<Document> users = data.getEmbedded(List.of("mute", "users"), new ArrayList<>());
-										for (Document user : users) {
-											if (user.getLong("id") == member.getIdLong()) {
+										for(Document user : users) {
+											if(user.getLong("id") == member.getIdLong()) {
 												users.remove(user);
 												break;
 											}
 										}
 										
 										users.add(new Document()
-												.append("id", member.getIdLong())
-												.append("duration", null)
-												.append("time", Clock.systemUTC().instant().getEpochSecond()));
+											.append("id", member.getIdLong())
+											.append("duration", null)
+											.append("time", Clock.systemUTC().instant().getEpochSecond()));
 										
 										Database.get().updateGuildById(guild.getIdLong(), Updates.set("mute.users", users), (result, writeException) -> {
-											if (writeException != null) {
+											if(writeException != null) {
 												writeException.printStackTrace();
 												
 												callback.onResult(null, new IllegalStateException("Something went wrong"));
-											} else {
+											}else{
 												callback.onResult(null, null);
 											}
 										});
@@ -310,7 +310,7 @@ public class ModuleWarn {
 				
 				event.reply(message).queue();
 				
-				if (warning.getActionTaken() != null) {
+				if(warning.getActionTaken() != null) {
 					ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, Action.valueOf(warning.getActionTaken().getString("action").toUpperCase()));
 				}
 			});
@@ -527,7 +527,7 @@ public class ModuleWarn {
 	public void initialize(CommandImpl command) {
 		command.setCategory(Category.WARN);
 		
-		for (ICommand subCommand : command.getSubCommands()) {
+		for(ICommand subCommand : command.getSubCommands()) {
 			this.initialize((CommandImpl) subCommand);
 		}
 	}

@@ -316,5 +316,4 @@ public class CommandPrune extends CommandImpl {
 			this.initialize((CommandImpl) subCommand);
 		}
 	}
-	
 }
