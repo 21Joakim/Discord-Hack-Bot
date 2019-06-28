@@ -205,6 +205,10 @@ public class JSBBotResource {
 				.limit(limit)
 				.into(new ArrayList<>());
 			
+			if(warnings.size() == 0) {
+				return Response.ok(new JSONObject().put("success", true).put("data", new JSONObject().put("warnings", new JSONArray()).put("paginationId", JSONObject.NULL))).build();
+			}
+			
 			JSONArray jsonWarnings = new JSONArray();
 			
 			for(Document warning : warnings) {
@@ -238,6 +242,72 @@ public class JSBBotResource {
 			String lastId = jsonWarnings.getJSONObject(jsonWarnings.length() - 1).getString("id");
 			
 			return Response.ok(new JSONObject().put("success", true).put("data", new JSONObject().put("warnings", jsonWarnings).put("paginationId", lastId))).build();
+		}else{
+			return auth.response;
+		}
+	}
+	
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/guild/{guildId}/modlogs")
+	public Response modlogs(@HeaderParam("Authorization") String token, @PathParam("guildId") String guildIdStr, @QueryParam("from") String from, @QueryParam("limit") Integer limit) {
+		if(limit == null || limit <= 0 || limit >= 100) {
+			limit = 10;
+		}
+		
+		GuildAuthorization auth = this.ensureAuthorized(token, guildIdStr);
+		if(auth.isAuthorized()) {
+			Bson filter;
+			if(from != null) {
+				filter = Filters.and(Filters.eq("guildId", auth.guildId), Filters.gt("_id", new ObjectId(from)));
+			}else{
+				filter = Filters.eq("guildId", auth.guildId);
+			}
+			
+			List<Document> modlogCases = Database.get().getModlogCases()
+				.find(filter)
+				.limit(limit)
+				.into(new ArrayList<>());
+			
+			if(modlogCases.size() == 0) {
+				return Response.ok(new JSONObject().put("success", true).put("data", new JSONObject().put("modlogs", new JSONArray()).put("paginationId", JSONObject.NULL))).build();
+			}
+			
+			JSONArray jsonModlogCases = new JSONArray();
+			
+			for(Document modlogCase : modlogCases) {
+				try {
+					long moderatorId = modlogCase.getLong("moderatorId");
+					User moderator = JSBBot.getShardManager().getUserById(moderatorId);
+					
+					long userId = modlogCase.getLong("userId");
+					User targetUser = JSBBot.getShardManager().getUserById(userId);
+					
+					JSONObject jsonModlogCase = new JSONObject()
+						.put("id", modlogCase.getObjectId("_id").toString())
+						.put("caseId", modlogCase.getLong("id"))
+						.put("moderator", new JSONObject()
+							.put("id", String.valueOf(moderatorId))
+							.put("name", moderator != null ? moderator.getName() : null)
+							.put("discriminator", moderator != null ? moderator.getDiscriminator() : null))
+						.put("user", new JSONObject()
+							.put("id", String.valueOf(userId))
+							.put("name", targetUser != null ? targetUser.getName() : null)
+							.put("discriminator", targetUser != null ? targetUser.getDiscriminator() : null))
+						.put("createdAt", modlogCase.getLong("createdAt"))
+						.put("reason", modlogCase.getString("reason"))
+						.put("action", modlogCase.getString("action"))
+						.put("automatic", modlogCase.getBoolean("automatic"));
+					
+					jsonModlogCases.put(jsonModlogCase);
+				}catch(Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
+			String lastId = jsonModlogCases.getJSONObject(jsonModlogCases.length() - 1).getString("id");
+			
+			return Response.ok(new JSONObject().put("success", true).put("data", new JSONObject().put("modlogs", jsonModlogCases).put("paginationId", lastId))).build();
 		}else{
 			return auth.response;
 		}
