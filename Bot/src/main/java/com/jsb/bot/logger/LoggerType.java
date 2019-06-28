@@ -124,10 +124,10 @@ public enum LoggerType {
 	/** {@link LoggerListener#onGuildVoiceUpdate(net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent)} */
 	VOICE_MEMBER_CHANGE_CHANNEL(Category.VOICE),
 	
-	/** {@link LoggerListener#onGuildMessageReceived(net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent)} */
-	MESSAGE_RECEIVE(Category.MESSAGE), // Used for testing
+	/* Not implemented yet
 	MESSAGE_EDIT(Category.MESSAGE),
 	MESSAGE_DELETE(Category.MESSAGE)
+	*/
 	;
 	
 	public static enum Category {
@@ -136,7 +136,7 @@ public enum LoggerType {
 		EMOTE,
 		GUILD,
 		VOICE,
-		MESSAGE,
+		// MESSAGE,
 		CHANNEL,
 		TEXT_CHANNEL,
 		VOICE_CHANNEL,

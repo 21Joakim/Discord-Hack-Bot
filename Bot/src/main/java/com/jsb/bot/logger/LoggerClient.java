@@ -207,8 +207,8 @@ class LoggerClient {
 				}
 				
 				if(uncapable.size() > 0) {
-					for(Request wrongTypeRequest : uncapable) {
-						deque.addFirst(wrongTypeRequest);
+					for(Request uncapableRequest : uncapable) {
+						deque.addFirst(uncapableRequest);
 					}
 				}
 				

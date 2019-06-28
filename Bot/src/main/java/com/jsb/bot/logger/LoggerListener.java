@@ -69,7 +69,6 @@ import net.dv8tion.jda.api.events.guild.update.GuildUpdateVerificationLevelEvent
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceGuildDeafenEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceGuildMuteEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.events.role.RoleCreateEvent;
 import net.dv8tion.jda.api.events.role.RoleDeleteEvent;
 import net.dv8tion.jda.api.events.role.update.RoleUpdateColorEvent;
@@ -1582,25 +1581,6 @@ public class LoggerListener extends ListenerAdapter {
 			embed.setFooter(String.format("User ID: %s", event.getEntity().getId()));
 			
 			LoggerClient.get().queue(guild, LoggerType.VOICE_MEMBER_CHANGE_CHANNEL, embed.build());
-		});
-	}
-	
-	public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
-		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MESSAGE_RECEIVE);
-		if(logger == null) {
-			return;
-		}
-		
-		this.delay(() -> {
-			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
-			embed.setDescription(String.format("A message was sent by **%s**", event.getAuthor().getAsTag()));
-			embed.setColor(LoggerListener.COLOR_GREEN);
-			embed.setTimestamp(ZonedDateTime.now());
-			embed.setAuthor(event.getMember().getEffectiveName(), event.getAuthor().getEffectiveAvatarUrl());
-			embed.setFooter(String.format("User ID: %s", event.getAuthor().getId()));
-			embed.addField("Content", event.getMessage().getContentRaw(), true);
-			
-			LoggerClient.get().queue(event.getGuild(), LoggerType.MESSAGE_RECEIVE, embed.build());
 		});
 	}
 }
