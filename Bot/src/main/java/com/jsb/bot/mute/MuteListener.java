@@ -342,7 +342,9 @@ public class MuteListener extends ListenerAdapter {
 								}
 							} else if (actionType.equals(MuteEvasionType.WARN_ON_JOIN)) {
 								ModuleWarn.doWarn(event.getGuild(), event.getJDA().getSelfUser(), event.getMember().getUser(), actionMessage == null ? "Mute Evasion" : actionMessage, action.getInteger("worth"), (warning, exception) -> {
-									ModlogListener.createModlog(event.getGuild(), event.getJDA().getSelfUser(), event.getMember().getUser(), actionMessage == null ? "Mute Evasion" : actionMessage, false, Action.valueOf(warning.getActionTaken().getString("action").toUpperCase()));
+									if (warning.getActionTaken() != null) {
+										ModlogListener.createModlog(event.getGuild(), event.getJDA().getSelfUser(), event.getMember().getUser(), actionMessage == null ? "Mute Evasion" : actionMessage, false, Action.valueOf(warning.getActionTaken().getString("action").toUpperCase()));
+									}
 								});
 							}
 						} else {
