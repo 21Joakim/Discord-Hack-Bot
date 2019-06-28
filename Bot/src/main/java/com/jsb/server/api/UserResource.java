@@ -24,6 +24,9 @@ import com.jsb.bot.core.JSBBot;
 import com.jsb.bot.database.Database;
 import com.mongodb.client.model.Updates;
 
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.User;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -56,27 +59,60 @@ public class UserResource {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/me")
-	public Response me(@HeaderParam("Authorization") String authorization) {
+	public Response me(@HeaderParam("Authorization") String authorization, @QueryParam("force") boolean force) {
 		Long id = UserResource.verify(authorization);
 		if(id != null) {
-			Document data = Database.get().getDashboardUser(id);
+			User user = JSBBot.getShardManager().getUserById(id);
+			JSONObject data = new JSONObject();
 			
-			// Check if token needs to be refreshed
-			
-			Request request = new Request.Builder()
-				.url("https://discordapp.com/api/users/@me")
-				.header("Authorization", "Bearer " + data.getString("accessToken"))
-				.build();
-			
-			try(okhttp3.Response response = this.client.newCall(request).execute()) {
-				if(response.isSuccessful()) {
-					return Response.ok(new JSONObject(response.body().string())).build();
-				}else{
-					System.err.println("Failed to get me: " + new JSONObject(response.body().string()));
+			if(user != null && !force) {
+				data.put("id", user.getId())
+					.put("name", user.getName())
+					.put("discriminator", user.getDiscriminator())
+					.put("avatarUrl", user.getEffectiveAvatarUrl());
+					
+				JSONArray guilds = new JSONArray();
+				
+				for(Guild guild : JSBBot.getShardManager().getMutualGuilds(user)) {
+					if(guild.getMember(user).hasPermission(Permission.MANAGE_SERVER)) {
+						guilds.put(new JSONObject()
+							.put("name", guild.getName())
+							.put("iconUrl", guild.getIconUrl()));
+					}
 				}
-			}catch(IOException e) {
-				e.printStackTrace();
+				
+				data.put("guilds", guilds);
+			}else{
+				/* TODO: Probably shouldn't make requests to Discord every /me request */
+				
+				Document dashboardData = Database.get().getDashboardUser(id);
+				
+				/* TODO: Check if token needs to be refreshed */
+				
+				Request request = new Request.Builder()
+					.url("https://discordapp.com/api/users/@me")
+					.header("Authorization", "Bearer " + dashboardData.getString("accessToken"))
+					.build();
+				
+				try(okhttp3.Response response = this.client.newCall(request).execute()) {
+					if(response.isSuccessful()) {
+						JSONObject me = new JSONObject(response.body().string());
+						System.out.println(me);
+						
+						data.put("id", me.getString("id"))
+							.put("name", me.getString("username"))
+							.put("discriminator", me.getString("discriminator"))
+							.put("avatarUrl", "https://cdn.discordapp.com/avatars/" + me.getString("id") + "/" + me.getString("avatar"))
+							.put("guilds", new JSONArray());
+					}else{
+						System.err.println("Failed to get me: " + new JSONObject(response.body().string()));
+					}
+				}catch(IOException e) {
+					e.printStackTrace();
+				}
 			}
+			
+			return Response.ok(new JSONObject().put("success", true).put("data", data)).build();
 		}else{
 			return Response.status(Status.UNAUTHORIZED).entity(new JSONObject()
 				.put("success", false)
@@ -84,12 +120,6 @@ public class UserResource {
 				.put("code", Status.UNAUTHORIZED.getStatusCode())
 			).build();
 		}
-		
-		return Response.status(Status.INTERNAL_SERVER_ERROR).entity(new JSONObject()
-			.put("success", false)
-			.put("error", "Internal server error")
-			.put("code", Status.INTERNAL_SERVER_ERROR.getStatusCode())
-		).build();
 	}
 	
 	@GET
@@ -142,7 +172,7 @@ public class UserResource {
 							Updates.set("refreshToken", data.getString("refresh_token"))
 						));
 						
-						return Response.ok(new JSONObject().put("success", true).put("token", token)).build();
+						return Response.ok(new JSONObject().put("success", true).put("data", new JSONObject().put("token", token))).build();
 					}else{
 						System.err.println("Failed to get me: " + new JSONObject(meResponse.body().string()));
 					}

@@ -236,17 +236,29 @@ public class Database {
 	}
 	
 	public List<Document> getWarnings(long guildId) {
-		return this.warnings.find(Filters.eq("guildId", guildId)).into(new ArrayList<>());
+		return this.getWarnings(guildId, (Bson) null);
 	}
 	
-	public void getWarnings(long guildId, Callback<List<Document>> callback) {
+	public List<Document> getWarnings(long guildId, Bson filter) {
+		if(filter != null) {
+			return this.warnings.find(Filters.and(Filters.eq("guildId", guildId), filter)).into(new ArrayList<>());
+		}else{
+			return this.warnings.find(Filters.eq("guildId", guildId)).into(new ArrayList<>());
+		}
+	}
+	
+	public void getWarnings(long guildId, Bson filter, Callback<List<Document>> callback) {
 		this.queryExecutor.submit(() -> {
 			try {
-				callback.onResult(this.getWarnings(guildId), null);
+				callback.onResult(this.getWarnings(guildId, filter), null);
 			}catch(Throwable e) {
 				callback.onResult(null, e);
 			}
 		});
+	}
+	
+	public void getWarnings(long guildId, Callback<List<Document>> callback) {
+		this.getWarnings(guildId, null, callback);
 	}
 	
 	public List<Document> getWarnings(long guildId, long userId) {
