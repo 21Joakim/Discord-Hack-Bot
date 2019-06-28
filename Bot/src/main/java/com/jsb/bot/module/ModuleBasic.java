@@ -627,6 +627,13 @@ public class ModuleBasic {
 						} else {
 							List<Document> users = data.getEmbedded(List.of("mute", "users"), Collections.emptyList());
 							
+							for (Document user : users) {
+								if (user.getLong("id") == member.getIdLong()) {
+									users.remove(user);
+									break;
+								}
+							}
+							
 							Document muteData = new Document()
 									.append("length", muteLength)
 									.append("time", Clock.systemUTC().instant().getEpochSecond())
