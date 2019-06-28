@@ -32,31 +32,23 @@ public class CheckUtility {
 				
 				for (Document commandData : commands) {
 					if (commandData.getString("id").equals(event.getCommand().getCommandTrigger())) {
-						Long commandPermissions = commandData.getLong("permissions");
-						if (commandPermissions != null) {
-							neededPermissions = Permission.getPermissions(commandPermissions);
-						}
-					}
-				}
-				
-				for (Document commandData : commands) {
-					if (commandData.getString("id").equals(event.getCommand().getCommandTrigger())) {
 						for (long userId : commandData.getList("bypassUsers", Long.class)) {
 							if (userId == event.getMember().getIdLong()) {
 								return true;
 							}
 						}
-					}
-				}
-				
-				for (Role role : event.getMember().getRoles()) {
-					for (Document commandData : commands) {
-						if (commandData.getString("id").equals(event.getCommand().getCommandTrigger())) {
+						
+						for (Role role : event.getMember().getRoles()) {
 							for (long roleId : commandData.getList("bypassRoles", Long.class)) {
 								if (roleId == role.getIdLong()) {
 									return true;
 								}
 							}
+						}
+						
+						Long commandPermissions = commandData.getLong("permissions");
+						if (commandPermissions != null) {
+							neededPermissions = Permission.getPermissions(commandPermissions);
 						}
 					}
 				}
