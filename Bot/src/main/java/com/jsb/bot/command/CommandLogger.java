@@ -393,4 +393,36 @@ public class CommandLogger extends CommandImpl {
 			this.enableEvents(event, logger, true, finalTypes);
 		});
 	}
+	
+	private void reset(CommandEvent event, Document logger, boolean enable) {
+		UpdateOptions options = new UpdateOptions().arrayFilters(List.of(Filters.eq("logger.channelId", logger.getLong("channelId"))));
+		
+		Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.combine(Updates.set("logger.loggers.$[logger].mode", !enable), Updates.set("logger.loggers.$[logger].events", Collections.emptyList())), options, (result, exception) -> {
+			if(exception != null) {
+				exception.printStackTrace();
+				
+				event.reply("Something went wrong :no_entry:").queue();
+				
+				return;
+			}
+			
+			event.reply((enable ? "Enabled" : "Disabled") + " all events").queue();
+		});
+	}
+	
+	@AuthorPermissions(Permission.MANAGE_SERVER)
+	@Command(value="enable all events")
+	public void enabledAllEvents(CommandEvent event, @Argument(value="channel", nullDefault=true) TextChannel channel) {
+		this.getLoggerPerform(event, channel, logger -> {
+			this.reset(event, logger, true);
+		});
+	}
+	
+	@AuthorPermissions(Permission.MANAGE_SERVER)
+	@Command(value="disable all events")
+	public void disableAllEvents(CommandEvent event, @Argument(value="channel", nullDefault=true) TextChannel channel) {
+		this.getLoggerPerform(event, channel, logger -> {
+			this.reset(event, logger, false);
+		});
+	}
 }
