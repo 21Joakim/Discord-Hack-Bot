@@ -17,20 +17,20 @@ import net.dv8tion.jda.api.Permission;
 @Module
 public class ModuleDeveloper {
 	
-	private JSONObject getJsonDataFromCommand(ICommand command, boolean useCommandTrigger) {
+	public static JSONObject getJsonDataFromCommand(ICommand command, boolean useCommandTrigger) {
 		List<JSONObject> subCommands = new ArrayList<>();
 		for (ICommand subCommand : command.getSubCommands()) {
-			subCommands.add(this.getJsonDataFromCommand(subCommand, false));
+			subCommands.add(ModuleDeveloper.getJsonDataFromCommand(subCommand, false));
 		}
 		
 		return new JSONObject()
-				.put("name", useCommandTrigger ? command.getCommandTrigger() : command.getCommand())
-				.put("description", command.getDescription())
-				.put("usage", command.getUsage())
-				.put("aliases", command.getAliases())
-				.put("subCommands", subCommands)
-				.put("authorPermissions", Permission.getRaw(command.getAuthorDiscordPermissions()))
-				.put("botPermissions", Permission.getRaw(command.getBotDiscordPermissions()));
+			.put("name", useCommandTrigger ? command.getCommandTrigger() : command.getCommand())
+			.put("description", command.getDescription())
+			.put("usage", command.getUsage())
+			.put("aliases", command.getAliases())
+			.put("subCommands", subCommands)
+			.put("authorPermissions", Permission.getRaw(command.getAuthorDiscordPermissions()))
+			.put("botPermissions", Permission.getRaw(command.getBotDiscordPermissions()));
 	}
 
 	@Command(value="json commands", description="Gives all the commands with their data in a json file")
@@ -38,10 +38,9 @@ public class ModuleDeveloper {
 	public void jsonCommands(CommandEvent event) {
 		List<JSONObject> json = new ArrayList<>();
 		for (ICommand command : event.getCommandListener().getAllCommands()) {
-			json.add(this.getJsonDataFromCommand(command, true));
+			json.add(ModuleDeveloper.getJsonDataFromCommand(command, true));
 		}
 		
 		event.replyFile(new JSONObject().put("commands", json).toString().getBytes(StandardCharsets.UTF_8), "commands.json").queue();
 	}
-	
 }
