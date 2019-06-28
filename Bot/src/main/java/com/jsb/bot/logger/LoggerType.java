@@ -7,6 +7,8 @@ public enum LoggerType {
 	MEMBER_JOIN(Category.MEMBER),
 	/** {@link LoggerListener#onGuildMemberLeave(net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent)} */
 	MEMBER_LEAVE(Category.MEMBER),
+	/** {@link LoggerListener#onGuildMemberLeave(net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent)} */
+	MEMBER_KICK(Category.MEMBER),
 	/** {@link LoggerListener#onGuildBan(net.dv8tion.jda.api.events.guild.GuildBanEvent)} */
 	MEMBER_BAN(Category.MEMBER),
 	/** {@link LoggerListener#onGuildUnban(net.dv8tion.jda.api.events.guild.GuildUnbanEvent)} */

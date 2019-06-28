@@ -146,10 +146,12 @@ public class LoggerListener extends ListenerAdapter {
 		});
 	}
 	
-	/* TODO: Check for kick */
 	public void onGuildMemberLeave(GuildMemberLeaveEvent event) {
-		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MEMBER_LEAVE);
-		if(logger == null) {
+		/* Not the best way to do this but it will do for now */
+		Document loggerLeave = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MEMBER_LEAVE);
+		Document loggerKick = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MEMBER_KICK);
+		
+		if(loggerLeave == null && loggerKick == null) {
 			return;
 		}
 		
@@ -161,7 +163,30 @@ public class LoggerListener extends ListenerAdapter {
 			embed.setFooter(String.format("User ID: %s", event.getUser().getId()));
 			embed.setColor(LoggerListener.COLOR_RED);
 			
-			LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_LEAVE, embed.build());
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.KICK).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getTargetIdLong() == event.getUser().getIdLong())
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						if(loggerKick != null) {
+							embed.setDescription(String.format("**%s** has been kicked by **%s**", event.getUser().getAsTag(), entry.getUser().getAsTag()));
+							
+							LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_KICK, embed.build());
+						}
+					}else{
+						if(loggerLeave != null) {
+							LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_LEAVE, embed.build());
+						}
+					}
+				});
+			}else{
+				if(loggerLeave != null) {
+					LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_LEAVE, embed.build());
+				}
+			}
 		});
 	}
 	
