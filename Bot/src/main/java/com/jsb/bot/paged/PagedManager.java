@@ -213,11 +213,11 @@ public class PagedManager implements EventListener {
 			}
 			
 			for(String trigger : this.gotoTriggers) {
-				if(!trigger.equals(content)) {
+				if(!content.startsWith(trigger + " ")) {
 					continue;
 				}
 				
-				content = content.substring(trigger.length());
+				content = content.substring(trigger.length() + 1);
 				
 				try {
 					if(this.onGoto(message, Integer.parseInt(content))) {

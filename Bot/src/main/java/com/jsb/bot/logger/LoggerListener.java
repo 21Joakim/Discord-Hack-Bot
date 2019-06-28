@@ -69,7 +69,6 @@ import net.dv8tion.jda.api.events.guild.update.GuildUpdateVerificationLevelEvent
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceGuildDeafenEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceGuildMuteEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.events.role.RoleCreateEvent;
 import net.dv8tion.jda.api.events.role.RoleDeleteEvent;
 import net.dv8tion.jda.api.events.role.update.RoleUpdateColorEvent;
@@ -147,10 +146,12 @@ public class LoggerListener extends ListenerAdapter {
 		});
 	}
 	
-	/* TODO: Check for kick */
 	public void onGuildMemberLeave(GuildMemberLeaveEvent event) {
-		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MEMBER_LEAVE);
-		if(logger == null) {
+		/* Not the best way to do this but it will do for now */
+		Document loggerLeave = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MEMBER_LEAVE);
+		Document loggerKick = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MEMBER_KICK);
+		
+		if(loggerLeave == null && loggerKick == null) {
 			return;
 		}
 		
@@ -162,7 +163,30 @@ public class LoggerListener extends ListenerAdapter {
 			embed.setFooter(String.format("User ID: %s", event.getUser().getId()));
 			embed.setColor(LoggerListener.COLOR_RED);
 			
-			LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_LEAVE, embed.build());
+			if(event.getGuild().getSelfMember().hasPermission(Permission.VIEW_AUDIT_LOGS)) {
+				event.getGuild().retrieveAuditLogs().type(ActionType.KICK).queue(logs -> {
+					AuditLogEntry entry = logs.stream()
+						.filter(e -> e.getTargetIdLong() == event.getUser().getIdLong())
+						.findFirst()
+						.orElse(null);
+					
+					if(entry != null) {
+						if(loggerKick != null) {
+							embed.setDescription(String.format("**%s** has been kicked by **%s**", event.getUser().getAsTag(), entry.getUser().getAsTag()));
+							
+							LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_KICK, embed.build());
+						}
+					}else{
+						if(loggerLeave != null) {
+							LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_LEAVE, embed.build());
+						}
+					}
+				});
+			}else{
+				if(loggerLeave != null) {
+					LoggerClient.get().queue(event.getGuild(), LoggerType.MEMBER_LEAVE, embed.build());
+				}
+			}
 		});
 	}
 	
@@ -1582,25 +1606,6 @@ public class LoggerListener extends ListenerAdapter {
 			embed.setFooter(String.format("User ID: %s", event.getEntity().getId()));
 			
 			LoggerClient.get().queue(guild, LoggerType.VOICE_MEMBER_CHANGE_CHANNEL, embed.build());
-		});
-	}
-	
-	public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
-		Document logger = LoggerClient.get().getLogger(event.getGuild(), LoggerType.MESSAGE_RECEIVE);
-		if(logger == null) {
-			return;
-		}
-		
-		this.delay(() -> {
-			WebhookEmbedBuilder embed = new WebhookEmbedBuilder();
-			embed.setDescription(String.format("A message was sent by **%s**", event.getAuthor().getAsTag()));
-			embed.setColor(LoggerListener.COLOR_GREEN);
-			embed.setTimestamp(ZonedDateTime.now());
-			embed.setAuthor(event.getMember().getEffectiveName(), event.getAuthor().getEffectiveAvatarUrl());
-			embed.setFooter(String.format("User ID: %s", event.getAuthor().getId()));
-			embed.addField("Content", event.getMessage().getContentRaw(), true);
-			
-			LoggerClient.get().queue(event.getGuild(), LoggerType.MESSAGE_RECEIVE, embed.build());
 		});
 	}
 }
