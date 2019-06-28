@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
@@ -323,5 +324,24 @@ public class JSBBotResource {
 				.put("data", new JSONObject()
 					.put("commands", ModuleDeveloper.getAllCommandsAsJson(JSBBot.getCommandListener()))))
 			.build();
+	}
+	
+	@DELETE
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/guild/{guildId}/warnings/{warningId}")
+	public Response deleteWarning(@HeaderParam("Authorization") String token, @PathParam("guildId") String guildIdStr, @PathParam("warningId") String warningId) {
+		GuildAuthorization auth = this.ensureAuthorized(token, guildIdStr);
+		if(auth.isAuthorized()) {
+			Document document = Database.get().getWarnings().find(Filters.and(Filters.eq("guildId", auth.guildId), Filters.eq("_id", new ObjectId(warningId)))).first();
+			if(document == null) {
+				return Response.status(Status.BAD_REQUEST).entity(new JSONObject().put("success", false).put("error", "Invalid warning")).build();
+			}
+			
+			Database.get().getWarnings().deleteOne(Filters.eq("_id", new ObjectId(warningId)));
+			
+			return Response.ok().entity(new JSONObject().put("success", true)).build();
+		}else{
+			return auth.response;
+		}
 	}
 }
