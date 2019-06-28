@@ -13,7 +13,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 //requests
 app.get('/', function(req, res) {
-  res.render('index', {title: 'discord_bot | Home'});
+  res.render('index', {title: 'discord_bot | Home', home: true});
 })
 
 app.get('/servers', function(req, res) {

@@ -2,34 +2,8 @@ let URI = 'http://jockie.ddns.net:8080'
 let TOKEN = localStorage.getItem('token'); 
 let USER = ''
 
-let profileJSON = GET(URI+'/api/user/me', true);
-console.log(`Requesting user data`)
-profileJSON.onload = function () {
-  let res = profileJSON.response;
-  if(res.success) {
-    USER = res.data;
-    console.log(`User data successfully recieved`)
-  }
-  
-  let url = location.href.split('/')[3].split("#")[0];
-  let js = createElm('script');
-  let body = document.body;
-  let path = '';
-
-  if(url == 'manage') {
-    path = '../'
-  }
-
-  js.setAttribute('src', path+'assets/index.js');
-
-  if(url) {
-    let js2 = createElm('script');
-    js2.setAttribute('src', `${path}assets/${url}.js`);
-    appendChildren(body, [js, js2])
-  }else{
-    body.append(js);
-  }
-}
+console.log('Requesting user data')
+requestUSER();
 
 function appendChildren(x, arr) {
   arr.forEach(y => {
@@ -37,14 +11,18 @@ function appendChildren(x, arr) {
   })
 }
 
-function createElm(type, classes, text, att) {
+function createElm(type, classes, text, att, p) {
   let __elm = document.createElement(type);
   if(classes) {
     __elm.classList.add(...classes);
   }
 
   if(text) {
-    __elm.innerHTML = text;
+    if(p) {
+      __elm.innerText = text;
+    }else{
+      __elm.innerHTML = text;
+    }
   }
 
   if(att) {
@@ -91,3 +69,41 @@ function removeParam(x) {
   history.replaceState(null, '', '?' + params + location.hash);
 }
 
+function addScripts() {
+  let url = document.title.toLocaleLowerCase().split('|')[1].replace(/ /g,'');
+  let js = createElm('script');
+  let body = document.body;
+  let path = '';
+
+  if(url == 'manage') {
+    path = '../'
+  }
+
+  js.setAttribute('src', path+'assets/index.js');
+
+  if(url != 'home') {
+    let js2 = createElm('script');
+    js2.setAttribute('src', `${path}assets/${url}.js`);
+    appendChildren(body, [js, js2])
+  }else{
+    body.append(js);
+  }
+}
+
+function requestUSER() {
+  let profileJSON = GET(URI+'/api/user/me', true);
+  profileJSON.onloadend = function(state) {
+    let res = profileJSON.response;
+    if(res) {
+      USER = res.data;
+      console.log('User data successfully received');
+    }else{
+      console.log('Could not receive user data');
+    }
+    addScripts();
+  };
+}
+
+function removeSpacesW(x, y) {
+  return x.replace(/\s/g, y)
+}

@@ -10,7 +10,6 @@ json.onload = function() {
   }
 }
 
-//functions
 function addCategoryList(data) {
   let __sidenav = document.getElementById('sectionNav');
   let __commandContent = document.getElementById('commandContent');
@@ -50,7 +49,9 @@ function addCommands(x) {
 
     arr.push(__command);
   }
-  return arr;
+  return arr.sort(function(a, b){
+    return a.innerText.length - b.innerText.length;
+  });
 }
 
 function addCommandsDiv(x, y) {
@@ -105,11 +106,12 @@ function createTable(x, sub) {
 
   for(let i = 0; i < x.length; i++) {
     let __tr2 = createElm('tr');
+    let alias = x[i].aliases;
     let __tableBody = [
       createElm('td', [], x[i].name),  
       createElm('td', [], (x[i].description?x[i].description:'None')),  
-      createElm('td', [], (x[i].usage?x[i].usage:'None')),  
-      createElm('td', [], (x[i].aliases?x[i].aliases:'None'))
+      createElm('td', [], (x[i].usage?x[i].usage:'None'), '', true),  
+      createElm('td', [], (alias?getAliases(alias):'None'))
     ]
   
     appendChildren(__tr2, __tableBody);
@@ -123,6 +125,10 @@ function createTable(x, sub) {
   return __tableContainer;
 }
 
-function removeSpacesW(x, y) {
-  return x.replace(/\s/g, y)
+function getAliases(x) {
+  let txt = '';
+  x.forEach(y => {
+    txt += y + ', '
+  });
+  return txt.substring(0, txt.length-2);
 }

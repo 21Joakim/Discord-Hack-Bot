@@ -2,7 +2,7 @@ let guildId = location.href.split('/').pop().split('#')[0];
 let sets = ['logger', 'templates', 'filtering', 'warnings']
 let set = location.hash.replace('#', '');
 
-if(!set) {
+if(set == '') {
   set = sets[0];
 }
 
@@ -10,10 +10,9 @@ let json = doRequest(set);
 json.onload = function() {
   let data = json.response.data;
   getSection(sets[0], data);
-
+  
   if(location.hash) {
-    getSection(set, data);
-    doSelection(set);
+    getSection(set, '', true);
   }else{
     doSelection(sets[0]);
   }
@@ -181,7 +180,7 @@ function createWarningsHolders(x) {
 
 function createPlaceholderItem(x, y) {
   let z = `${x}<br><span>${y}</span>`
-  return createElm('div', z, ['placeholderTitle'])
+  return createElm('div', ['placeholderTitle'], z);
 }
 
 function doRequest(cog) {

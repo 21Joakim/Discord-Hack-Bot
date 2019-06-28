@@ -6,7 +6,7 @@ function createServers(data) {
   let __a = createElm('a', ['btn'], 'Add a server');
 
   __secH2.style = 'text-transform:uppercase;margin-left:10px;'
-  __a.setAttribute('href', 'https://discordapp.com/oauth2/authorize?scope=bot&permissions=8&client_id=59276873631504794');
+  __a.setAttribute('href', 'https://discordapp.com/oauth2/authorize?scope=bot&permissions=8&client_id=592768736315047946');
 
   appendChildren(__secHeader, [__secH2, __a]);
 

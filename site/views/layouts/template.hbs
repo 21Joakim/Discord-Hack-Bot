@@ -15,8 +15,8 @@
   {{/if}}
 </script>
 </head>
-<body>
-  <header class="navWrapper-main">
+<body {{#if home}}style="background-color:var(--black);"{{/if}}>
+  <header class="navWrapper-main" {{#if home}}style="background-color:var(--black);border-bottom: 1px solid var(--black2);"{{/if}}>
     <div class="navWrapper">
       <div class="navBurger" id="nav" onclick="showNav()">
         <span></span>

@@ -59,7 +59,7 @@ function login(x) {
       return;
     } 
     localStorage.setItem('token', res.data.token);
-    checkProfile();
+    window.location.href = window.location.href;
   }
 }
 

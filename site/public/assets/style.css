@@ -72,11 +72,22 @@ a {
   border: none;
   cursor: pointer;
 }
+.btn:focus {
+  outline: none;
+}
 .btn:hover {
   background-color: var(--blurple2)
 }
 .btn.small {
   padding: 5px 15px;
+}
+.btn.wide {
+  text-align: center;
+  display: block;
+  max-width: 200px;
+  margin: auto;
+  font-weight: 500;
+  line-height: 25px;
 }
 .btn.white,
 .btn.red {
@@ -319,6 +330,54 @@ a {
   text-decoration: underline;
   text-decoration-color: var(--red);
 }
+/*------home------*/
+.homeContent {
+  margin: 0 auto;
+  padding: 72px 50px 0;
+}
+.homeTitle {
+  font: 400 16px whitney;
+  line-height: 24px;
+  color: var(--white3);
+  margin: 12px 0 25px;
+}
+.homeTitle.big {
+  font: 700 36px whitney;
+  line-height: 44px;
+  color: var(--white);
+  margin: 0;
+}
+.homeImg {
+  z-index: -1;
+  position: fixed;
+  bottom: 30px;
+  left: 300px;
+  right: 0;
+  margin: auto;
+  opacity: 0.2;
+  object-fit: cover;
+  animation: breathing 5s ease-out infinite;
+}
+
+.homeImg:nth-child(2) {
+  bottom: 200px;
+  right: 800px;
+  z-index: -2;
+  animation: breathing_r 5s ease-out infinite;
+}
+
+@keyframes breathing {
+  0% {transform: translateY(0)}
+  65% {transform: translateY(5px)}
+  100% {transform: translateY(0)}  
+}
+@keyframes breathing_r {
+  0% {transform: translateY(0) rotate(-20deg)}
+  65% {transform: translateY(5px) rotate(-20deg)}
+  100% {transform: translateY(0) rotate(-20deg)}  
+}
+
+
 /*------sections------*/
 .sectionWrapper-main {
   display: flex;
@@ -601,6 +660,15 @@ a {
   }
   .navListWrapper.mobile ~ .sectionContent {
     padding-top: 0px;
+  }
+}
+
+@media screen and (max-width: 1200px) {
+  .homeImg {
+    left: 0;
+  }
+  .homeImg:nth-child(2) {
+    display: none;
   }
 }
 
