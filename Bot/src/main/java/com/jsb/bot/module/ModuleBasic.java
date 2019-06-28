@@ -119,26 +119,31 @@ public class ModuleBasic {
 		Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
 		if (member == null) {
 			event.reply("I could not find that user :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (member.equals(event.getMember())) {
 			event.reply("You cannot kick youself :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (member.equals(event.getSelfMember())) {
 			event.reply("I cannot kick myself :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (!event.getMember().canInteract(member)) {
 			event.reply("You cannot kick a user with a higher or equal top role than yours :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (!event.getSelfMember().canInteract(member)) {
 			event.reply("I cannot kick a user with a higher or equal top role than me :no_entry:").queue();
+			
 			return;
 		}
 		
@@ -156,6 +161,7 @@ public class ModuleBasic {
 			for (Ban ban : bans) {
 				if (ban.getUser().equals(user)) {
 					event.reply("That user is already banned :no_entry:").queue();
+					
 					return;
 				}
 			}
@@ -201,21 +207,25 @@ public class ModuleBasic {
 		
 		if (member.equals(event.getMember())) {
 			event.reply("You cannot ban youself :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (member.equals(event.getSelfMember())) {
 			event.reply("I cannot ban myself :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (!event.getMember().canInteract(member)) {
 			event.reply("You cannot ban a user with a higher or equal top role than yours :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (!event.getSelfMember().canInteract(member)) {
 			event.reply("I cannot ban a user with a higher or equal top role than me :no_entry:").queue();
+			
 			return;
 		}
 		
@@ -268,6 +278,7 @@ public class ModuleBasic {
 		
 		if (event.getGuild().isMember(user)) {
 			event.reply("That user is not banned :no_entry:").queue();
+			
 			return;
 		}
 		
@@ -287,27 +298,32 @@ public class ModuleBasic {
 		public void onCommand(CommandEvent event, @Argument(value="user") String userArgument, @Argument(value="time") String timeString, @Argument(value="reason", endless=true, nullDefault=true) String reason) {
 			Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
 			if (member == null) {
-				event.reply("I could not find that user :no_entry:");
+				event.reply("I could not find that user :no_entry:").queue();
+				
 				return;
 			}
 			
 			if (member.equals(event.getMember())) {
 				event.reply("You cannot mute yourself :no_entry:").queue();
+				
 				return;
 			}
 			
 			if (member.equals(event.getSelfMember())) {
 				event.reply("I cannot mute myself :no_entry:").queue();
+				
 				return;
 			}
 			
 			if (!event.getMember().canInteract(member)) {
 				event.reply("You cannot mute someone with a higher or equal top role than yours :no_entry:").queue();
+				
 				return;
 			}
 			
 			if (member.hasPermission(Permission.ADMINISTRATOR)) {
 				event.reply("I cannot mute someone with administrator permissions :no_entry:").queue();
+				
 				return;
 			}
 			
@@ -316,17 +332,20 @@ public class ModuleBasic {
 				muteLength = TimeUtility.timeStringToSeconds(timeString);
 			} catch(IllegalArgumentException e) {
 				event.reply(e.getMessage() + " :no_entry:").queue();
+				
 				return;
 			}
 			
 			MuteListener.getOrCreateMuteRole(event.getGuild(), (role, exception) -> {
 				if (!event.getSelfMember().canInteract(role)) {
 					event.reply("I cannot give a role which is higher or equal then my top role :no_entry:").queue();
+					
 					return;
 				}
 				
 				if (member.getRoles().contains(role)) {
 					event.reply("That user is already muted :no_entry:").queue();
+					
 					return;
 				}
 				
@@ -336,43 +355,46 @@ public class ModuleBasic {
 							readException.printStackTrace();
 							
 							event.reply("Something went wrong :no_entry:").queue();
-						} else {
-							List<Document> users = data.getEmbedded(List.of("mute", "users"), new ArrayList<>());
 							
-							for (Document user : users) {
-								if (user.getLong("id") == member.getIdLong()) {
-									users.remove(user);
-									break;
-								}
-							}
-							
-							Document muteData = new Document()
-									.append("duration", muteLength)
-									.append("time", Clock.systemUTC().instant().getEpochSecond())
-									.append("id", member.getUser().getIdLong());
-							
-							users.add(muteData);
-							
-							Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("mute.users", users), (result, writeException) -> {
-								if (writeException != null) {
-									writeException.printStackTrace();
-									
-									event.reply("Something went wrong :no_entry:").queue();
-								} else {
-									event.reply("**" + member.getUser().getAsTag() + "** has been muted for " + TimeUtility.secondsToTimeString(muteLength)).queue();
-									
-									ModuleBasic.getReason(event.getGuild(), reason, templatedReason -> {
-										ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), templatedReason, false, Action.MUTE);
-										
-										ScheduledFuture<?> executor = MuteListener.scheduledExector.schedule(() -> {
-											MuteListener.unmuteUser(event.getGuild().getIdLong(), member.getUser().getIdLong(), role.getIdLong());
-										}, muteLength, TimeUnit.SECONDS);
-										
-										MuteListener.putExecutor(event.getGuild().getIdLong(), member.getUser().getIdLong(), executor);
-									});
-								}
-							});
+							return;
 						}
+						
+						List<Document> users = data.getEmbedded(List.of("mute", "users"), new ArrayList<>());
+						
+						for (Document user : users) {
+							if (user.getLong("id") == member.getIdLong()) {
+								users.remove(user);
+								
+								break;
+							}
+						}
+						
+						Document muteData = new Document()
+							.append("duration", muteLength)
+							.append("time", Clock.systemUTC().instant().getEpochSecond())
+							.append("id", member.getUser().getIdLong());
+						
+						users.add(muteData);
+						
+						Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("mute.users", users), (result, writeException) -> {
+							if (writeException != null) {
+								writeException.printStackTrace();
+								
+								event.reply("Something went wrong :no_entry:").queue();
+							} else {
+								event.reply("**" + member.getUser().getAsTag() + "** has been muted for " + TimeUtility.secondsToTimeString(muteLength)).queue();
+								
+								ModuleBasic.getReason(event.getGuild(), reason, templatedReason -> {
+									ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), templatedReason, false, Action.MUTE);
+									
+									ScheduledFuture<?> executor = MuteListener.scheduledExector.schedule(() -> {
+										MuteListener.unmuteUser(event.getGuild().getIdLong(), member.getUser().getIdLong(), role.getIdLong());
+									}, muteLength, TimeUnit.SECONDS);
+									
+									MuteListener.putExecutor(event.getGuild().getIdLong(), member.getUser().getIdLong(), executor);
+								});
+							}
+						});
 					});
 				});
 			});
@@ -384,16 +406,19 @@ public class ModuleBasic {
 			Role role = ArgumentUtility.getRole(event.getGuild(), roleArgument);
 			if (role == null) {
 				event.reply("I could not find that role :no_entry:").queue();
+				
 				return;
 			}
 			
 			if (role.isManaged()) {
 				event.reply("The mute role cannot be a managed role :no_entry:").queue();
+				
 				return;
 			}
 			
 			if (!event.getSelfMember().canInteract(role)) {
 				event.reply("That role is higher or equal than my top role :no_entry:").queue();
+				
 				return;
 			}
 			
@@ -402,23 +427,25 @@ public class ModuleBasic {
 					readException.printStackTrace();
 					
 					event.reply("Something went wrong :no_entry:").queue();
-				} else {
-					long muteRoleId = data.getEmbedded(List.of("mute", "role"), 0L);
-					if (role.getIdLong() == muteRoleId) {
-						event.reply("The mute role is already set to that role :no_entry:").queue();
-						return;
-					}
 					
-					Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("mute.role", role.getIdLong()), (result, writeException) -> {
-						if (writeException != null) {
-							writeException.printStackTrace();
-							
-							event.reply("Something went wrong :no_entry:").queue();
-						} else {
-							event.reply("The mute role has been set to `" + role.getName() + "`").queue();
-						}
-					});
+					return;
 				}
+			
+				long muteRoleId = data.getEmbedded(List.of("mute", "role"), 0L);
+				if (role.getIdLong() == muteRoleId) {
+					event.reply("The mute role is already set to that role :no_entry:").queue();
+					return;
+				}
+				
+				Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("mute.role", role.getIdLong()), (result, writeException) -> {
+					if (writeException != null) {
+						writeException.printStackTrace();
+						
+						event.reply("Something went wrong :no_entry:").queue();
+					} else {
+						event.reply("The mute role has been set to `" + role.getName() + "`").queue();
+					}
+				});
 			});
 		}
 		
@@ -434,6 +461,7 @@ public class ModuleBasic {
 				evasionType = MuteEvasionType.valueOf(punishmentString.toUpperCase());
 			} catch(IllegalArgumentException e) {
 				event.reply("Invalid punishment, valid punishments are `" + MiscUtility.join(List.of(MuteEvasionType.values()), "`, `") + "` :no_entry:").queue();
+				
 				return;
 			}
 			
@@ -442,52 +470,54 @@ public class ModuleBasic {
 					readException.printStackTrace();
 					
 					event.reply("Something went wrong :no_entry:").queue();
-				} else {
-					Document actionData = data.getEmbedded(List.of("mute", "action"), new Document().append("type", "REMUTE_ON_JOIN"));
 					
-					List<Bson> updates = new ArrayList<>();
-					updates.add(Updates.set("mute.action.type", evasionType.toString()));
-					
-					StringBuilder reply = new StringBuilder();
-					reply.append("The punishment for mute evading has been set to `" + evasionType.toString() + "`");
-					
-					if (evasionType.equals(MuteEvasionType.WARN_ON_JOIN)) {
-						int worth = 1;
-						if (extra != null) {
-							if (MiscUtility.isNumber(extra)) {
-								worth = Integer.parseInt(extra);
-							} else {
-								event.reply("The worth of a warn has to be a number :no_entry:").queue();
-								return;
-							}
-						}
-						
-						Integer oldWorth = actionData.getInteger("worth");
-						
-						if (oldWorth != null && oldWorth == worth) {
-							event.reply("The warn worth is already set to **" + worth + "** :no_entry:").queue();
-							return;
-						}
-						
-						reply.append(" with a warn worth of **" + worth + "**");
-						updates.add(Updates.set("mute.action.worth", worth));
-					} else {
-						if (actionData.getString("type").equals(evasionType.toString())) {
-							event.reply("The punishment for mute evading is already set to that :no_entry:").queue();
+					return;
+				}
+				
+				Document actionData = data.getEmbedded(List.of("mute", "action"), new Document().append("type", "REMUTE_ON_JOIN"));
+				
+				List<Bson> updates = new ArrayList<>();
+				updates.add(Updates.set("mute.action.type", evasionType.toString()));
+				
+				StringBuilder reply = new StringBuilder();
+				reply.append("The punishment for mute evading has been set to `" + evasionType.toString() + "`");
+				
+				if (evasionType.equals(MuteEvasionType.WARN_ON_JOIN)) {
+					int worth = 1;
+					if (extra != null) {
+						if (MiscUtility.isNumber(extra)) {
+							worth = Integer.parseInt(extra);
+						} else {
+							event.reply("The worth of a warn has to be a number :no_entry:").queue();
 							return;
 						}
 					}
 					
-					Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.combine(updates), (result, writeException) -> {
-						if (writeException != null) {
-							writeException.printStackTrace();
-							
-							event.reply("Something went wrong :no_entry:").queue();
-						} else {
-							event.reply(reply).queue();
-						}
-					});
+					Integer oldWorth = actionData.getInteger("worth");
+					
+					if (oldWorth != null && oldWorth == worth) {
+						event.reply("The warn worth is already set to **" + worth + "** :no_entry:").queue();
+						return;
+					}
+					
+					reply.append(" with a warn worth of **" + worth + "**");
+					updates.add(Updates.set("mute.action.worth", worth));
+				} else {
+					if (actionData.getString("type").equals(evasionType.toString())) {
+						event.reply("The punishment for mute evading is already set to that :no_entry:").queue();
+						return;
+					}
 				}
+				
+				Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.combine(updates), (result, writeException) -> {
+					if (writeException != null) {
+						writeException.printStackTrace();
+						
+						event.reply("Something went wrong :no_entry:").queue();
+					} else {
+						event.reply(reply).queue();
+					}
+				});
 			});
 		}
 		
@@ -499,12 +529,14 @@ public class ModuleBasic {
 	public void unmute(CommandEvent event, @Argument(value="user") String userArgument, @Argument(value="reason", endless=true, nullDefault=true) String reason) {
 		Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
 		if (member == null) {
-			event.reply("I could not find that user :no_entry:");
+			event.reply("I could not find that user :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (!event.getMember().canInteract(member)) {
 			event.reply("You cannot unmute someone with a higher or equal top role than yours :no_entry:").queue();
+			
 			return;
 		}
 		
@@ -513,45 +545,51 @@ public class ModuleBasic {
 				readException.printStackTrace();
 				
 				event.reply("Something went wrong :no_entry:").queue();
-			} else {
-				Document muteData = data.get("mute", Document.class);
-				List<Document> users = muteData.getList("users", Document.class);
-				long muteRoleId = muteData.getLong("role");
 				
-				Role muteRole = event.getGuild().getRoleById(muteRoleId);
-				if (muteRole == null) {
+				return;
+			}
+			
+			Document muteData = data.get("mute", Document.class);
+			List<Document> users = muteData.getList("users", Document.class);
+			long muteRoleId = muteData.getLong("role");
+			
+			Role muteRole = event.getGuild().getRoleById(muteRoleId);
+			if (muteRole == null) {
+				event.reply("That user is not muted :no_entry:").queue();
+			} else {
+				if (!member.getRoles().contains(muteRole)) {
 					event.reply("That user is not muted :no_entry:").queue();
-				} else {
-					if (!member.getRoles().contains(muteRole)) {
-						event.reply("That user is not muted :no_entry:").queue();
+					
+					return;
+				}
+				
+				for (Document user : users) {
+					if (member.getIdLong() == user.getLong("id")) {
+						users.remove(user);
+						
+						break;
+					}
+				}
+				
+				Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("mute.users", users), (result, writeException) -> {
+					if (writeException != null) {
+						writeException.printStackTrace();
+						
+						event.reply("Something went wrong :no_entry:").queue();
+						
 						return;
 					}
 					
-					for (Document user : users) {
-						if (member.getIdLong() == user.getLong("id")) {
-							users.remove(user);
-							break;
-						}
-					}
-					
-					Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("mute.users", users), (result, writeException) -> {
-						if (writeException != null) {
-							writeException.printStackTrace();
+					event.getGuild().removeRoleFromMember(member, muteRole).queue($ -> {
+						event.reply("**" + member.getUser().getAsTag() + "** has been unmuted").queue();
+						
+						ModuleBasic.getReason(event.getGuild(), reason, templatedReason -> {
+							ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), templatedReason, false, Action.UNMUTE);
 							
-							event.reply("Something went wrong :no_entry:").queue();
-						} else {
-							event.getGuild().removeRoleFromMember(member, muteRole).queue($ -> {
-								event.reply("**" + member.getUser().getAsTag() + "** has been unmuted").queue();
-								
-								ModuleBasic.getReason(event.getGuild(), reason, templatedReason -> {
-									ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), templatedReason, false, Action.UNMUTE);
-									
-									MuteListener.removeExecutor(event.getGuild().getIdLong(), member.getIdLong());
-								});
-							});
-						}
+							MuteListener.removeExecutor(event.getGuild().getIdLong(), member.getIdLong());
+						});
 					});
-				}
+				});
 			}
 		});
 	}
@@ -563,17 +601,20 @@ public class ModuleBasic {
 		Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
 		if (member == null) {
 			event.reply("I could not find that user :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (member.equals(event.getMember())) {
 			event.reply("You cannot disconnect yourself :no_entry:").queue();
+			
 			return;
 		}
 		
 		VoiceChannel channel = member.getVoiceState().getChannel();
 		if (channel == null) {
 			event.reply("That user is not in a voice channel :no_entry:").queue();
+			
 			return;
 		}
 		
@@ -593,27 +634,32 @@ public class ModuleBasic {
 		Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
 		if (member == null) {
 			event.reply("I could not find that user :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (nickname.length() > 32) {
 			event.reply("Nicknames cannot be any longer than 32 characters :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (!event.getMember().canInteract(member)) {
 			event.reply("You cannot rename a user with a higher or equal top role than yours :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (!event.getSelfMember().canInteract(member)) {
 			event.reply("I cannot rename a user with a higher or equal top role than me :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (!member.equals(event.getMember())) {
 			if (!member.hasPermission(Permission.NICKNAME_MANAGE)) {
 				event.reply("You need the Manage Nicknames permission to rename someone else :no_entry:").queue();
+				
 				return;
 			}
 		}
@@ -630,32 +676,38 @@ public class ModuleBasic {
 		Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
 		if (member == null) {
 			event.reply("I could not find that user :no_entry:").queue();
+			
 			return;
 		}
 		
 		Role role = ArgumentUtility.getRole(event.getGuild(), roleArgument);
 		if (role == null) {
 			event.reply("I could not find that role :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (role.isManaged()) {
 			event.reply("I cannot give a managed role :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (!event.getMember().canInteract(role)) {
 			event.reply("You cannot add a role which is higher or equal than your top role :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (!event.getSelfMember().canInteract(role)) {
 			event.reply("I cannot add a role which is higher or equal than my top role :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (member.getRoles().contains(role)) {
 			event.reply("That user already has that role :no_entry:").queue();
+			
 			return;
 		}
 		
@@ -671,32 +723,38 @@ public class ModuleBasic {
 		Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
 		if (member == null) {
 			event.reply("I could not find that user :no_entry:").queue();
+			
 			return;
 		}
 		
 		Role role = ArgumentUtility.getRole(event.getGuild(), roleArgument);
 		if (role == null) {
 			event.reply("I could not find that role :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (role.isManaged()) {
 			event.reply("I cannot remove a managed role :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (!event.getMember().canInteract(role)) {
 			event.reply("You cannot remove a role which is higher or equal than your top role :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (!event.getSelfMember().canInteract(role)) {
 			event.reply("I cannot remove a role which is higher or equal than my top role :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (!member.getRoles().contains(role)) {
 			event.reply("That user doesn't have that role :no_entry:").queue();
+			
 			return;
 		}
 		
@@ -710,40 +768,40 @@ public class ModuleBasic {
 	@BotPermissions({Permission.MANAGE_ROLES})
 	public void createRole(CommandEvent event, @Argument(value="name") String roleName, @Argument(value="hex", nullDefault=true) String hex, @Argument(value="hoisted", nullDefault=true) Boolean hoisted,
 			@Argument(value="mentionable", nullDefault=true) Boolean mentionable, @Argument(value="permissions", nullDefault=true) Long permissions) {
+		
 		if (roleName.length() > 100) {
 			event.reply("Role names can be no longer than 100 characters :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (event.getGuild().getRoles().size() >= 250) {
 			event.reply("The server already has the max amount of roles it can have (250) :no_entry:").queue();
+			
 			return;
 		}
 		
 		Color roleColour = null;
 		if (hex != null) {
-			hex = hex.startsWith("#") ? hex : "#" + hex;
 			try {
-				roleColour = Color.decode(hex);
+				roleColour = Color.decode(hex.startsWith("#") ? hex : "#" + hex);
 			} catch(NumberFormatException e) {
 				event.reply("The hex code provided was invalid :no_entry:").queue();
+				
 				return;
 			}
 		}
 		
-		boolean roleHoist = false;
-		if (hoisted != null) {
-			roleHoist = hoisted;
-		}
+		hoisted = hoisted != null ? hoisted : false;
+		mentionable = mentionable != null ? mentionable : false;
 		
-		boolean roleMention = false;
-		if (mentionable != null) {
-			roleMention = mentionable;
-		}
-		
-		event.getGuild().createRole().setName(roleName).setColor(roleColour).setHoisted(roleHoist).setMentionable(roleMention).setPermissions(permissions).queue(role -> {
-			event.reply("`" + role.getName() + "` has been created").queue();
-		});
+		event.getGuild().createRole()
+			.setName(roleName)
+			.setColor(roleColour)
+			.setHoisted(hoisted)
+			.setMentionable(mentionable)
+			.setPermissions(permissions)
+			.queue(role -> event.reply("`" + role.getName() + "` has been created").queue());
 	}
 	
 	@Command(value="delete role", aliases={"dr", "deleterole"}, description="Deletes a role in the current server")
@@ -753,21 +811,25 @@ public class ModuleBasic {
 		Role role = ArgumentUtility.getRole(event.getGuild(), roleArgument);
 		if (role == null) {
 			event.reply("I could not find that role :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (role.isManaged()) {
 			event.reply("I cannot delete a managed role :no_entry:").queue();
+
 			return;
 		}
 		
 		if (!event.getMember().canInteract(role)) {
 			event.reply("You cannot delete a role which is higher or equal than your top role :no_entry:").queue();
+			
 			return;
 		}
 		
 		if (!event.getSelfMember().canInteract(role)) {
 			event.reply("I cannot delete a role which is higher or equal than my top role :no_entry:").queue();
+			
 			return;
 		}
 		
@@ -787,20 +849,25 @@ public class ModuleBasic {
 			channel = ArgumentUtility.getTextChannel(event.getGuild(), channelArgument);
 			if (channel == null) {
 				event.reply("I could not find that text channel :no_entry:").queue();
+				
 				return;
 			}
 		}
 		
+		/* 
+		 * Unsure if this is a JDA bug or not but .deny causes all allowed and denied permissions 
+		 * to be reset and only have the specified ones be denied, hence why this clunky implementation.
+		 */
 		PermissionOverride channelOverride = channel.getPermissionOverride(event.getGuild().getPublicRole());
 		EnumSet<Permission> allowedPermissions = channelOverride == null ? EnumSet.noneOf(Permission.class) : channelOverride.getAllowed();
 		EnumSet<Permission> deniedPermissions = channelOverride == null ? EnumSet.noneOf(Permission.class) : channelOverride.getDenied();
-		if (deniedPermissions.contains(Permission.MESSAGE_WRITE)) {
-			deniedPermissions.remove(Permission.MESSAGE_WRITE);
+		if (deniedPermissions.remove(Permission.MESSAGE_WRITE)) {
 			channel.putPermissionOverride(event.getGuild().getPublicRole()).setPermissions(allowedPermissions, deniedPermissions).queue($ -> {
 				event.reply(channel.getAsMention() + " is no longer locked down").queue();
 			});
 		} else {
 			deniedPermissions.add(Permission.MESSAGE_WRITE);
+			
 			channel.putPermissionOverride(event.getGuild().getPublicRole()).setPermissions(allowedPermissions, deniedPermissions).queue($ -> {
 				event.reply(channel.getAsMention() + " is now locked down").queue();
 			});
@@ -815,5 +882,4 @@ public class ModuleBasic {
 			this.initialize((CommandImpl) subCommand);
 		}
 	}
-	
 }

@@ -32,65 +32,67 @@ public class ModlogListener extends ListenerAdapter {
 		Database.get().getGuildById(guild.getIdLong(), null, Projections.include("modlog.enabled", "modlog.channel", "modlog.disabledActions"), (data, readException) -> {
 			if (readException != null) {
 				readException.printStackTrace();
-			} else {
-				Document modlogData = data.getEmbedded(List.of("modlog"), new Document());
-				boolean enabled = modlogData.getBoolean("enabled", false);
-				if (enabled) {
-					List<String> disabledActions = modlogData.getList("disabledActions", String.class, Collections.emptyList());
-					if (!disabledActions.contains(action.toString())) {
-						long caseId = Database.get().getModlogCasesAmountFromGuild(guild.getIdLong()) + 1;
-						TextChannel channel = guild.getTextChannelById(modlogData.getLong("channel"));
-						if (channel != null) {
-							EmbedBuilder embed = new EmbedBuilder();
-							embed.setTitle("Case " + caseId + " | " + action.getName());
-							embed.addField("Moderator", moderator == null ? "Unknown" : moderator.getAsTag() + " (" + moderator.getId() + ")", false);
-							embed.addField("User", user.getAsTag() + " (" + user.getId() + ")", false);
-							embed.addField("Reason", reason == null ? "None Given" : reason, false);
-							embed.setTimestamp(Instant.now());
-							
-							if (guild.getSelfMember().hasPermission(channel, Permission.MESSAGE_EMBED_LINKS) && guild.getSelfMember().hasPermission(channel, Permission.MESSAGE_WRITE)) {
-								channel.sendMessage(embed.build()).queue(message -> {
-									Document newCase = new Document()
-											.append("guildId", guild.getIdLong())
-											.append("messageId", message.getIdLong())
-											.append("channelId", channel.getIdLong())
-											.append("moderatorId", moderator.getIdLong())
-											.append("userId", user.getIdLong())
-											.append("createdAt", Clock.systemUTC().instant().getEpochSecond())
-											.append("id", caseId)
-											.append("reason", reason)
-											.append("action", action.toString())
-											.append("automatic", automatic);
-									
-									Database.get().insertModlogCase(newCase, ($, exception) -> {
-										if(exception != null) {
-											exception.printStackTrace();
-										}
-									});
-								});
+				
+				return;
+			}
+			
+			Document modlogData = data.getEmbedded(List.of("modlog"), new Document());
+			boolean enabled = modlogData.getBoolean("enabled", false);
+			if (enabled) {
+				List<String> disabledActions = modlogData.getList("disabledActions", String.class, Collections.emptyList());
+				if (!disabledActions.contains(action.toString())) {
+					long caseId = Database.get().getModlogCasesAmountFromGuild(guild.getIdLong()) + 1;
+					TextChannel channel = guild.getTextChannelById(modlogData.getLong("channel"));
+					if (channel != null) {
+						EmbedBuilder embed = new EmbedBuilder();
+						embed.setTitle("Case " + caseId + " | " + action.getName());
+						embed.addField("Moderator", moderator == null ? "Unknown" : moderator.getAsTag() + " (" + moderator.getId() + ")", false);
+						embed.addField("User", user.getAsTag() + " (" + user.getId() + ")", false);
+						embed.addField("Reason", reason == null ? "None Given" : reason, false);
+						embed.setTimestamp(Instant.now());
+						
+						if (guild.getSelfMember().hasPermission(channel, Permission.MESSAGE_EMBED_LINKS) && guild.getSelfMember().hasPermission(channel, Permission.MESSAGE_WRITE)) {
+							channel.sendMessage(embed.build()).queue(message -> {
+								Document newCase = new Document()
+									.append("guildId", guild.getIdLong())
+									.append("messageId", message.getIdLong())
+									.append("channelId", channel.getIdLong())
+									.append("moderatorId", moderator.getIdLong())
+									.append("userId", user.getIdLong())
+									.append("createdAt", Clock.systemUTC().instant().getEpochSecond())
+									.append("id", caseId)
+									.append("reason", reason)
+									.append("action", action.toString())
+									.append("automatic", automatic);
 								
-								return;
-							}
+								Database.get().insertModlogCase(newCase, ($, exception) -> {
+									if(exception != null) {
+										exception.printStackTrace();
+									}
+								});
+							});
+							
+							return;
 						}
-						
-						Document newCase = new Document()
-								.append("guildId", guild.getIdLong())
-								.append("messageId", null)
-								.append("channelId", null)
-								.append("moderatorId", moderator.getIdLong())
-								.append("userId", user.getIdLong())
-								.append("createdAt", Clock.systemUTC().instant().getEpochSecond())
-								.append("id", caseId)
-								.append("reason", reason)
-								.append("action", action.toString())
-								.append("automatic", automatic);
-						
-						Database.get().insertModlogCase(newCase, ($, exception) -> {
-							if(exception != null) {
-								exception.printStackTrace();
-							}
-						});
 					}
+					
+					Document newCase = new Document()
+						.append("guildId", guild.getIdLong())
+						.append("messageId", null)
+						.append("channelId", null)
+						.append("moderatorId", moderator.getIdLong())
+						.append("userId", user.getIdLong())
+						.append("createdAt", Clock.systemUTC().instant().getEpochSecond())
+						.append("id", caseId)
+						.append("reason", reason)
+						.append("action", action.toString())
+						.append("automatic", automatic);
+					
+					Database.get().insertModlogCase(newCase, ($, exception) -> {
+						if(exception != null) {
+							exception.printStackTrace();
+						}
+					});
 				}
 			}
 		});
@@ -105,6 +107,7 @@ public class ModlogListener extends ListenerAdapter {
 					if (auditLog.getTargetIdLong() == event.getUser().getIdLong()) {
 						moderator = auditLog.getUser();
 						reason = auditLog.getReason();
+						
 						break;
 					}
 				} 
@@ -125,6 +128,7 @@ public class ModlogListener extends ListenerAdapter {
 					if (auditLog.getTargetIdLong() == event.getUser().getIdLong()) {
 						moderator = auditLog.getUser();
 						reason = auditLog.getReason();
+						
 						break;
 					}
 				} 
@@ -147,6 +151,7 @@ public class ModlogListener extends ListenerAdapter {
 					if (auditLog.getTargetIdLong() == event.getUser().getIdLong() && Duration.between(auditLog.getTimeCreated(), ZonedDateTime.now(ZoneId.of("UTC"))).getSeconds() <= 5) {
 						moderator = auditLog.getUser();
 						reason = auditLog.getReason();
+						
 						break;
 					}
 				} 
@@ -157,5 +162,4 @@ public class ModlogListener extends ListenerAdapter {
 			});
 		}
 	}
-	
 }
