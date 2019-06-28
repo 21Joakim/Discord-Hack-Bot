@@ -353,45 +353,93 @@ public class CommandLogger extends CommandImpl {
 	@AuthorPermissions(Permission.MANAGE_SERVER)
 	@Command(value="disable event")
 	public void disableEvent(CommandEvent event, @Argument(value="channel", nullDefault=true) TextChannel channel, @Argument(value="event", nullDefault=true) String type) {
-		EnumSet<LoggerType> types;
-		try {
-			types = EnumSet.of(LoggerType.valueOf(type.toUpperCase()));
-		}catch(IllegalArgumentException e) {
+		if(type != null) {
+			EnumSet<LoggerType> types;
 			try {
-				types = LoggerType.getByCategory(LoggerType.Category.valueOf(type.toUpperCase()));
-			}catch(IllegalArgumentException e2) {
-				event.reply("`" + type.toUpperCase() + "` is not a valid type, check the `logger types` command to see all the events").queue();
-				
-				return;
+				types = EnumSet.of(LoggerType.valueOf(type.toUpperCase()));
+			}catch(IllegalArgumentException e) {
+				try {
+					types = LoggerType.getByCategory(LoggerType.Category.valueOf(type.toUpperCase()));
+				}catch(IllegalArgumentException e2) {
+					event.reply("`" + type.toUpperCase() + "` is not a valid type, check the `logger types` command to see all the events").queue();
+					
+					return;
+				}
 			}
+			
+			EnumSet<LoggerType> finalTypes = types;
+			this.getLoggerPerform(event, channel, logger -> {
+				this.enableEvents(event, logger, false, finalTypes);
+			});
+		}else{
+			new PagedResult<>(List.of("Category", "Type"))
+				.onSelect(selectEvent -> {
+					if(selectEvent.entry.equals("Category")) {
+						new PagedResult<>(LoggerType.Category.values())
+							.onSelect(categorySelectEvent -> {
+								this.getLoggerPerform(event, channel, logger -> {
+									this.enableEvents(event, logger, false, LoggerType.getByCategory(categorySelectEvent.entry));
+								});
+							})
+							.send(event);
+					}else{
+						new PagedResult<>(LoggerType.values())
+							.onSelect(typeSelectEvent -> {
+								this.getLoggerPerform(event, channel, logger -> {
+									this.enableEvents(event, logger, false, EnumSet.of(typeSelectEvent.entry));
+								});
+							})
+							.send(event);
+					}
+				})
+				.send(event);
 		}
-		
-		EnumSet<LoggerType> finalTypes = types;
-		this.getLoggerPerform(event, channel, logger -> {
-			this.enableEvents(event, logger, false, finalTypes);
-		});
 	}
 	
 	@AuthorPermissions(Permission.MANAGE_SERVER)
 	@Command("enable event")
 	public void enableEvent(CommandEvent event, @Argument(value="channel", nullDefault=true) TextChannel channel, @Argument(value="event", nullDefault=true) String type) {
-		EnumSet<LoggerType> types;
-		try {
-			types = EnumSet.of(LoggerType.valueOf(type.toUpperCase()));
-		}catch(IllegalArgumentException e) {
+		if(type != null) {
+			EnumSet<LoggerType> types;
 			try {
-				types = LoggerType.getByCategory(LoggerType.Category.valueOf(type.toUpperCase()));
-			}catch(IllegalArgumentException e2) {
-				event.reply("`" + type.toUpperCase() + "` is not a valid type, check the `logger types` command to see all the events").queue();
-				
-				return;
+				types = EnumSet.of(LoggerType.valueOf(type.toUpperCase()));
+			}catch(IllegalArgumentException e) {
+				try {
+					types = LoggerType.getByCategory(LoggerType.Category.valueOf(type.toUpperCase()));
+				}catch(IllegalArgumentException e2) {
+					event.reply("`" + type.toUpperCase() + "` is not a valid type, check the `logger types` command to see all the events").queue();
+					
+					return;
+				}
 			}
+			
+			EnumSet<LoggerType> finalTypes = types;
+			this.getLoggerPerform(event, channel, logger -> {
+				this.enableEvents(event, logger, false, finalTypes);
+			});
+		}else{
+			new PagedResult<>(List.of("Category", "Type"))
+				.onSelect(selectEvent -> {
+					if(selectEvent.entry.equals("Category")) {
+						new PagedResult<>(LoggerType.Category.values())
+							.onSelect(categorySelectEvent -> {
+								this.getLoggerPerform(event, channel, logger -> {
+									this.enableEvents(event, logger, true, LoggerType.getByCategory(categorySelectEvent.entry));
+								});
+							})
+							.send(event);
+					}else{
+						new PagedResult<>(LoggerType.values())
+							.onSelect(typeSelectEvent -> {
+								this.getLoggerPerform(event, channel, logger -> {
+									this.enableEvents(event, logger, true, EnumSet.of(typeSelectEvent.entry));
+								});
+							})
+							.send(event);
+					}
+				})
+				.send(event);
 		}
-		
-		EnumSet<LoggerType> finalTypes = types;
-		this.getLoggerPerform(event, channel, logger -> {
-			this.enableEvents(event, logger, true, finalTypes);
-		});
 	}
 	
 	private void reset(CommandEvent event, Document logger, boolean enable) {
