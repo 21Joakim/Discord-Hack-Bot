@@ -636,7 +636,7 @@ public class ModuleBasic {
 							}
 							
 							Document muteData = new Document()
-									.append("length", muteLength)
+									.append("duration", muteLength)
 									.append("time", Clock.systemUTC().instant().getEpochSecond())
 									.append("id", member.getUser().getIdLong());
 							

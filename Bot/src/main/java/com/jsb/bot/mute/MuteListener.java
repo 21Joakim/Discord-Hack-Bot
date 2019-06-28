@@ -129,7 +129,7 @@ public class MuteListener extends ListenerAdapter {
 				Long muteRoleId = muteData.getLong("role");
 				for (Document user : users) {
 					long userId = user.getLong("id");
-					Long muteLength = user.getLong("length");
+					Long muteLength = user.getLong("duration");
 					if (muteLength != null) {
 						long timeLeft = (muteLength + user.getLong("time")) - timestampNow;
 						if (timeLeft > 0) {
@@ -204,7 +204,7 @@ public class MuteListener extends ListenerAdapter {
 										users.add(new Document()
 												.append("id", event.getUser().getIdLong())
 												.append("time", Clock.systemUTC().instant().getEpochSecond())
-												.append("length", null));
+												.append("duration", null));
 										
 										ModlogListener.createModlog(event.getGuild(), moderator, event.getUser(), reason, false, Action.MUTE);
 										
@@ -316,7 +316,7 @@ public class MuteListener extends ListenerAdapter {
 				List<Document> users = muteData.getList("users", Document.class);
 				for (Document user : users) {
 					if (user.getLong("id") == event.getMember().getIdLong()) {
-						Long muteLength = user.getLong("length");
+						Long muteLength = user.getLong("duration");
 						if (muteLength == null || muteLength + user.getLong("time") > Clock.systemUTC().instant().getEpochSecond()) {
 							String actionMessage = action.getString("message");
 							String actionTypeString = action.getString("type");
