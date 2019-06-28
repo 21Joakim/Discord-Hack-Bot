@@ -31,7 +31,7 @@ public class CommandTemplate extends CommandImpl {
 	}
 	
 	@AuthorPermissions(Permission.MANAGE_SERVER)
-	@Command(value="add")
+	@Command(value="add", description="Create a new reason template, templates are used to quickly specify a reason for moderator actions, they are specified like `t:name` or `template:name` when using a command which takes a reason")
 	public void add(CommandEvent event, @Argument("template name") String name, @Argument(value="template", endless=true) String template) {
 		Matcher matcher = CommandTemplate.TEMPLATE_NAME_PATTERN.matcher(name);
 		if(!matcher.matches()) {
@@ -77,7 +77,7 @@ public class CommandTemplate extends CommandImpl {
 	}
 	
 	@AuthorPermissions(Permission.MANAGE_SERVER)
-	@Command(value="remove")
+	@Command(value="remove", description="Remove a template by its name")
 	public void remove(CommandEvent event, @Argument(value="template name", endless=true) String name) {
 		Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.pull("template.reasons", new Document("name", name)), (result, exception) -> {
 			if(exception != null) {
@@ -96,7 +96,7 @@ public class CommandTemplate extends CommandImpl {
 		});
 	}
 	
-	@Command(value="list")
+	@Command(value="list", description="List all available templates")
 	public void list(CommandEvent event) {
 		Database.get().getGuildById(event.getGuild().getIdLong(), null, Projections.include("template.reasons"), (document, exception) -> {
 			if(exception != null) {

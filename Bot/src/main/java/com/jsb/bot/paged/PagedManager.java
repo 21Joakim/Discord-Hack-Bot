@@ -84,7 +84,7 @@ public class PagedManager implements EventListener {
 				}
 				
 				if(message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_MANAGE)) {
-					message.delete().queue();
+					message.delete().queue($ -> {}, $ -> {});
 				}
 				
 				return true;
@@ -106,7 +106,7 @@ public class PagedManager implements EventListener {
 				}
 				
 				if(message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_MANAGE)) {
-					message.delete().queue();
+					message.delete().queue($ -> {}, $ -> {});
 				}
 				
 				return true;
