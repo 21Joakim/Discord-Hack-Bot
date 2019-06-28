@@ -310,7 +310,9 @@ public class ModuleWarn {
 				
 				event.reply(message).queue();
 				
-				ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, Action.valueOf(warning.getActionTaken().getString("action").toUpperCase()));
+				if (warning.getActionTaken() != null) {
+					ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, Action.valueOf(warning.getActionTaken().getString("action").toUpperCase()));
+				}
 			});
 		}
 		
