@@ -314,7 +314,12 @@ public class CommandLogger extends CommandImpl {
 				
 				event.reply("Something went wrong :no_entry:").queue();
 			}else{
-				event.reply((enable ? "Enabled" : "Disabled") + " `" + events.toString() + "` for " + this.getTextChannelName(event.getGuild(), logger.getLong("channelId"))).queue();
+				String eventsStr = "";
+				for(LoggerType type : events) {
+					eventsStr += "`" + type + "`, ";
+				}
+				
+				event.reply((enable ? "Enabled" : "Disabled") + " " + eventsStr.substring(0, eventsStr.length() - 2) + " for " + this.getTextChannelName(event.getGuild(), logger.getLong("channelId"))).queue();
 			}
 		};
 		
@@ -419,7 +424,7 @@ public class CommandLogger extends CommandImpl {
 			
 			EnumSet<LoggerType> finalTypes = types;
 			this.getLoggerPerform(event, channel, logger -> {
-				this.enableEvents(event, logger, false, finalTypes);
+				this.enableEvents(event, logger, true, finalTypes);
 			});
 		}else{
 			new PagedResult<>(List.of("Category", "Type"))
