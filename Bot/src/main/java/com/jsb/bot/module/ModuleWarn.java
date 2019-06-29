@@ -310,7 +310,7 @@ public class ModuleWarn {
 				
 				event.reply(message).queue();
 				
-				if(warning.getActionTaken() != null) {
+				if(warning.getActionTaken() != null && warning.getActionError() == null) {
 					ModlogListener.createModlog(event.getGuild(), event.getAuthor(), member.getUser(), reason, false, Action.valueOf(warning.getActionTaken().getString("action").toUpperCase()));
 				}
 			});

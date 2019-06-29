@@ -1,6 +1,12 @@
 ## What is this?
 A Discord moderation bot made for the Discord Hack Week 2019
 
+## Invite
+https://discordapp.com/oauth2/authorize?scope=bot&permissions=8&client_id=592768736315047946
+
+## Website
+https://moderation.jockie.tk
+
 # Bot
 
 ## Features
