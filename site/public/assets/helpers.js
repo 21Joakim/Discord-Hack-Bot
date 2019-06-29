@@ -1,4 +1,4 @@
-let URI = 'http://jockie.ddns.net:8080'
+let URI = 'https://moderation.jockie.tk/'
 let TOKEN = localStorage.getItem('token'); 
 let USER = ''
 
