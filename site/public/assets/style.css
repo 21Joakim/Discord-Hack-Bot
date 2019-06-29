@@ -112,6 +112,10 @@ a {
 .btn.red:hover {
   border-color: var(--red);
 }
+.btn.disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 
 #overlay {
   background-color: black;
@@ -620,6 +624,10 @@ a {
   border-radius: 5px;
   line-height: 25px;
 }
+.placeholderTitle.half {
+  flex-basis: 50%;
+}
+
 .placeholderBtn {
   width: max-content;
   margin: auto 0 0 auto;

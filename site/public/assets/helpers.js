@@ -51,6 +51,17 @@ function GET(x, auth) {
   return req;
 }
 
+function DELETE(x, auth) {
+  let req = new XMLHttpRequest();
+  req.open('DELETE', x, [true]);
+  req.responseType = 'json';
+  if(auth) {
+    req.setRequestHeader('Authorization', TOKEN);
+  }
+  req.send();
+  return req;
+}
+
 function addSelection() {
   let val = location.hash.replace('#', '');
   if(location.hash) {
