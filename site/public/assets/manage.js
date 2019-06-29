@@ -178,7 +178,7 @@ function createLogsHolders(x, name, btn) {
        let __placeholderBtn = createElm('div', ['placeholderBtn']);
        let __btn = createElm('button', ['btn', 'small', 'red'], 'Delete');
 
-       __btn.setAttribute('onclick', `deleteHolder('${x[i].id}', ${sets[3]})`)
+       __btn.setAttribute('onclick', `deleteHolder('${x[i].id}', '${sets[3]}')`)
        __placeholderBtn.appendChild(__btn);
 
        main.push(__placeholderBtn)
