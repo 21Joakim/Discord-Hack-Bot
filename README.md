@@ -2,6 +2,8 @@
 A Discord moderation bot made for the Discord Hack Week 2019
 
 ## Invite
+The prefix for this bot is `?`
+
 https://discordapp.com/oauth2/authorize?scope=bot&permissions=8&client_id=592768736315047946
 
 ## Website
@@ -57,9 +59,12 @@ https://moderation.jockie.tk
 
 # Website
 
-## Required modules
-- handlebars
-- ncp
+## Dependencies
+* Node
 
-## Generting files for preview
-After intalling the required modules `npm install <module>` simply type in terminal `node create.js`
+### Required modules
+* express
+* express-handlebars
+
+### Running it
+`node server.js`
