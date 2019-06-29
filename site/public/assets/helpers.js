@@ -1,4 +1,4 @@
-let URI = 'http://jockie.ddns.net:8080'
+let URI = 'https://moderation.jockie.tk/'
 let TOKEN = localStorage.getItem('token'); 
 let USER = ''
 
@@ -43,6 +43,17 @@ function doSelection(val) {
 function GET(x, auth) {
   let req = new XMLHttpRequest();
   req.open('GET', x, [true]);
+  req.responseType = 'json';
+  if(auth) {
+    req.setRequestHeader('Authorization', TOKEN);
+  }
+  req.send();
+  return req;
+}
+
+function DELETE(x, auth) {
+  let req = new XMLHttpRequest();
+  req.open('DELETE', x, [true]);
   req.responseType = 'json';
   if(auth) {
     req.setRequestHeader('Authorization', TOKEN);

@@ -1,18 +1,18 @@
 let guildId = location.href.split('/').pop().split('#')[0];
-let sets = ['logger', 'templates', 'filtering', 'warnings']
+let sets = ['logger', 'templates', 'filtering', 'warnings', 'modlogs']
 let set = location.hash.replace('#', '');
 
-if(set == '') {
-  set = sets[0];
-}
-
-let json = doRequest(set);
+let json = doRequest(sets[0]);
 json.onload = function() {
   let data = json.response.data;
   getSection(sets[0], data);
-  
+
   if(location.hash) {
-    getSection(set, '', true);
+    if(set == sets[0]) {
+      doSelection(sets[0]);
+    }else{
+      getSection(set, '', true);
+    }
   }else{
     doSelection(sets[0]);
   }
@@ -43,7 +43,9 @@ function createModule(name, data) {
   if(name == sets[0]) {
     createLoggers(data.loggers);
   }else if(name == sets[3]) {
-    createWarnings(data.warnings);
+    createLogs(data.warnings, name, {title: 'Warnings', paragraph: 'List of people who have been warned on the server. You can see when, where and by whom that warning is. You can also delete the warning if deemed so.'}, true);
+  }else if(name == sets[4]) {
+    createLogs(data.modlogs, name, {title: 'Mod Logs', paragraph: 'List of the logs done by mods on the server'});
   }
 }
 
@@ -64,7 +66,7 @@ function createLoggers(data) {
 
   let __sectionHeader = createElm('div', ['sectionHeader'])
   let __title2 = createElm('h2', ['sectionTitle'], 'My Loggers');
-  let __btn = createElm('button', ['btn'], 'New Logger')
+  let __btn = createElm('button', ['btn', 'disabled'], 'New Logger')
 
   appendChildren(__sectionHeader, [__title2, __btn])
 
@@ -86,7 +88,7 @@ function createLoggerHolders(x) {
     let __placeholderTitle = createPlaceholderItem('channel', '#'+x[i].channel.name);
     let __placeholderTitle2 = createPlaceholderItem('events', getEvents(x[i].events));
     let __placeholderBtn = createElm('div', ['placeholderBtn']);
-    let __btn = createElm('button', ['btn', 'small', 'white'], 'Edit');
+    let __btn = createElm('button', ['btn', 'small', 'white', 'disabled'], 'Edit');
 
     __placeholderTitle2.style = 'line-height: 20px;'
 
@@ -100,7 +102,7 @@ function createLoggerHolders(x) {
     }
 
 
-    let __btn2 = createElm('button', ['btn', 'small', y.clr], y.txt)
+    let __btn2 = createElm('button', ['btn', 'small', y.clr, 'disabled'], y.txt)
     __btn2.style = 'margin-right:10px'
 
     appendChildren(__placeholderBtn, [__btn2, __btn]);
@@ -123,14 +125,9 @@ function getEvents(x) {
   return txt;
 }
 
-function createWarnings(data) {
-  let text = {
-    title: 'Warnings',
-    paragraph: 'List of people who have been warned on the server. You can see when, where and by whom that warning is. You can also delete the warning if deemed so.'
-  }
-  
+function createLogs(data, name, text, btn) {
   let __manageContent = document.getElementById('manageContent');
-  let __catholder = createElm('div', ['categoryHolder'], '', 'warnings');
+  let __catholder = createElm('div', ['categoryHolder'], '', name);
 
   let __title = createElm('h1', ['categoryTitle'], text.title)
   __title.style = 'margin-top:0;'
@@ -139,7 +136,7 @@ function createWarnings(data) {
   __p.style = 'margin-bottom:40px;'
 
   if(data.length != 0) {
-    let __placeholders = createWarningsHolders(data);
+    let __placeholders = createLogsHolders(data, name, btn);
     appendChildren(__catholder, [__title, __p, __placeholders]);
   }else{
     appendChildren(__catholder, [__title, __p]);
@@ -148,7 +145,7 @@ function createWarnings(data) {
   __manageContent.appendChild(__catholder);
 }
 
-function createWarningsHolders(x) {
+function createLogsHolders(x, name, btn) {
   let __mplaceHolder = createElm('div', ['placeholder-main']);
   let arr = [];
   for(let i = 0; i < x.length; i++) {
@@ -161,17 +158,34 @@ function createWarningsHolders(x) {
     __placeholderTitle2.style = 'flex-basis: 50%;margin-top:0;'
     
     let __placeholderTitle3 = createPlaceholderItem('reason', (x[i].reason?x[i].reason:'Reason was not provided.'));
-    
-    let __placeholderBtn = createElm('div', ['placeholderBtn']);
-    let __btn = createElm('button', ['btn', 'small', 'red'], 'Delete');
 
-    appendChildren(__placeholderBtn, [__btn]);
-    appendChildren(__placeholder, [
+
+    let main = [
       __placeholderTitle, 
       __placeholderTitle2,
       __placeholderTitle3,
-      __placeholderBtn
-    ]);
+    ]
+
+    if(name == sets[4]) {
+      let __placeholderTitle4 = createPlaceholderItem('action', x[i].action.toLowerCase());
+      __placeholderTitle3.style = 'flex-basis: 50%;'
+      __placeholderTitle4.style = 'flex-basis: 50%;'
+      __placeholderTitle4.children[1].style = 'text-transform:capitalize;'
+      main.push(__placeholderTitle4);
+    }
+
+    if(btn) {
+       let __placeholderBtn = createElm('div', ['placeholderBtn']);
+       let __btn = createElm('button', ['btn', 'small', 'red'], 'Delete');
+
+       __btn.setAttribute('onclick', `deleteHolder('${x[i].id}', '${set}')`)
+       __placeholderBtn.appendChild(__btn);
+
+       main.push(__placeholderBtn)
+    }
+  
+    
+    appendChildren(__placeholder, main);
     arr.push(__placeholder)
   }
   appendChildren(__mplaceHolder, arr);
@@ -185,4 +199,13 @@ function createPlaceholderItem(x, y) {
 
 function doRequest(cog) {
   return GET(`${URI}/api/bot/guild/${guildId}/${cog}`, true)
+}
+
+function deleteHolder(id, type) {
+  if(type == sets[3]) {
+    let del = DELETE(`${URI}/api/bot/guild/${guildId}/${type}/${id}`, true)
+    del.onloadend = function() {  
+      location.reload();
+    }
+  }
 }

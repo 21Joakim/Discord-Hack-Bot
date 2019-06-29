@@ -28,8 +28,12 @@ if(__sidenav) {
   let __newnav = __navList.cloneNode(true);
   __newnav.classList.add('mobile')
 
-  if (__sidenav.firstChild.classList == undefined) {
+  if (__sidenav.firstChild == null) {
     __sidenav.insertBefore(__newnav, __sidenav.firstChild);
+  }else if(__sidenav.firstElementChild){
+    __sidenav.insertBefore(__newnav, __sidenav.firstElementChild);
+  }else{
+    __sidenav.append(__newnav);
   }
 }
 

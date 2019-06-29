@@ -13,19 +13,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 //requests
 app.get('/', function(req, res) {
-  res.render('index', {title: 'discord_bot | Home', home: true});
+  res.render('index', {title: 'Home', home: true});
 })
 
 app.get('/servers', function(req, res) {
-  res.render("servers", {title: 'discord_bot | Servers', secure: true});
+  res.render("servers", {title: 'Servers', secure: true});
 })
 
 app.get('/commands', function(req, res) {
-  res.render('commands', {title: 'discord_bot | Commands'});
+  res.render('commands', {title: 'Commands'});
 })
 
 app.get('/manage/:id', function(req, res) {
-  res.render('manage', {title: 'discord_bot | Manage', secure: true, path: '../'});
+  res.render('manage', {title: 'Manage', secure: true, path: '../'});
 })
 
 http.createServer(app).listen(port);
