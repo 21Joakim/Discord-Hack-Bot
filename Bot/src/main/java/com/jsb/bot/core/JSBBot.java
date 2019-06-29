@@ -54,7 +54,7 @@ public class JSBBot {
 		});
 		
 		String[] prefixes = JSBBot.getConfig("prefixes", String[].class);
-		if(prefixes.length > 0) {
+		if(prefixes.length == 0) {
 			throw new RuntimeException("Please provide at least one prefix");
 		}
 		
