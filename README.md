@@ -56,15 +56,3 @@ https://moderation.jockie.tk
 
 * Java 9
 * MongoDB
-
-# Website
-
-## Dependencies
-* Node
-
-### Required modules
-* express
-* express-handlebars
-
-### Running it
-`node server.js`
