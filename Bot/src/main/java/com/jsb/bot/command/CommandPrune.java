@@ -41,13 +41,15 @@ public class CommandPrune extends CommandImpl {
 	public void onCommand(CommandEvent event, @Argument(value="amount", nullDefault=true) Integer amount) {
 		int limit = amount == null ? 100 : amount;
 		
-		if (limit > 100) {
+		if(limit > 100) {
 			event.reply("You can only prune up to 100 messages :no_entry:").queue();
+			
 			return;
 		}
 		
-		if (limit < 1) {
+		if(limit < 1) {
 			event.reply("You have to prune at least 1 message :no_entry:").queue();
+			
 			return;
 		}
 		
@@ -55,19 +57,19 @@ public class CommandPrune extends CommandImpl {
 		
 		event.getTextChannel().getHistory().retrievePast(limit).queue(messages -> {
 			ZonedDateTime dateTime = ZonedDateTime.now(ZoneId.of("UTC"));
-			for (Message message : new ArrayList<>(messages)) {
-				if (Duration.between(message.getTimeCreated(), dateTime).toSeconds() > this.pruneAgeLimit) {
+			for(Message message : new ArrayList<>(messages)) {
+				if(Duration.between(message.getTimeCreated(), dateTime).toSeconds() > this.pruneAgeLimit) {
 					messages.remove(message);
 				}
 			}
 			
-			if (messages.isEmpty()) {
+			if(messages.isEmpty()) {
 				return;
 			}
 			
-			if (messages.size() == 1) {
+			if(messages.size() == 1) {
 				messages.get(0).delete().queue();
-			} else {
+			}else{
 				event.getTextChannel().deleteMessages(messages).queue();
 			}
 		});
@@ -79,13 +81,15 @@ public class CommandPrune extends CommandImpl {
 	public void images(CommandEvent event, @Argument(value="amount", nullDefault=true) Integer amount) {
 		int limit = amount == null ? 100 : amount;
 		
-		if (limit > 100) {
+		if(limit > 100) {
 			event.reply("You can only prune up to 100 messages :no_entry:").queue();
+			
 			return;
 		}
 		
-		if (limit < 1) {
+		if(limit < 1) {
 			event.reply("You have to prune at least 1 message :no_entry:").queue();
+			
 			return;
 		}
 		
@@ -93,35 +97,35 @@ public class CommandPrune extends CommandImpl {
 		
 		event.getTextChannel().getHistory().retrievePast(this.pruneLimit).queue(messages -> {
 			ZonedDateTime dateTime = ZonedDateTime.now(ZoneId.of("UTC"));
-			for (Message message : new ArrayList<>(messages)) {
-				if (Duration.between(message.getTimeCreated(), dateTime).toSeconds() > this.pruneAgeLimit) {
+			for(Message message : new ArrayList<>(messages)) {
+				if(Duration.between(message.getTimeCreated(), dateTime).toSeconds() > this.pruneAgeLimit) {
 					messages.remove(message);
-				} else if (!message.getAttachments().isEmpty()) {
+				}else if(!message.getAttachments().isEmpty()) {
 					boolean delete = false;
-					for (Attachment attachment : message.getAttachments()) {
+					for(Attachment attachment : message.getAttachments()) {
 						if (attachment.isImage()) {
 							delete = true;
 							break;
 						}
 					}
 					
-					if (!delete) {
+					if(!delete) {
 						messages.remove(message);
 					}
-				} else {
+				}else{
 					messages.remove(message);
 				}
 			}
 			
-			if (messages.isEmpty()) {
+			if(messages.isEmpty()) {
 				return;
 			}
 			
 			messages = messages.subList(0, Math.min(limit, messages.size()));
 			
-			if (messages.size() == 1) {
+			if(messages.size() == 1) {
 				messages.get(0).delete().queue();
-			} else {
+			}else{
 				event.getTextChannel().deleteMessages(messages).queue();
 			}
 		});
@@ -133,19 +137,22 @@ public class CommandPrune extends CommandImpl {
 	public void user(CommandEvent event, @Argument(value="user") String userArgument, @Argument(value="amount", nullDefault=true) Integer amount) {
 		int limit = amount == null ? 100 : amount;
 		
-		if (limit > 100) {
+		if(limit > 100) {
 			event.reply("You can only prune up to 100 messages :no_entry:").queue();
+			
 			return;
 		}
 		
-		if (limit < 1) {
+		if(limit < 1) {
 			event.reply("You have to prune at least 1 message :no_entry:").queue();
+			
 			return;
 		}
 		
 		Member member = ArgumentUtility.getMember(event.getGuild(), userArgument);
-		if (member == null) {
+		if(member == null) {
 			event.reply("I could not find that user :no_entry:").queue();
+			
 			return;
 		}
 		
@@ -153,23 +160,23 @@ public class CommandPrune extends CommandImpl {
 		
 		event.getTextChannel().getHistory().retrievePast(this.pruneLimit).queue(messages -> {
 			ZonedDateTime dateTime = ZonedDateTime.now(ZoneId.of("UTC"));
-			for (Message message : new ArrayList<>(messages)) {
-				if (Duration.between(message.getTimeCreated(), dateTime).toSeconds() > this.pruneAgeLimit) {
+			for(Message message : new ArrayList<>(messages)) {
+				if(Duration.between(message.getTimeCreated(), dateTime).toSeconds() > this.pruneAgeLimit) {
 					messages.remove(message);
-				} else if (!message.getMember().equals(member)) {
+				}else if(!message.getMember().equals(member)) {
 					messages.remove(message);
 				}
 			}
 			
-			if (messages.isEmpty()) {
+			if(messages.isEmpty()) {
 				return;
 			}
 			
 			messages = messages.subList(0, Math.min(limit, messages.size()));
 			
-			if (messages.size() == 1) {
+			if(messages.size() == 1) {
 				messages.get(0).delete().queue();
-			} else {
+			}else{
 				event.getTextChannel().deleteMessages(messages).queue();
 			}
 		});
@@ -181,13 +188,15 @@ public class CommandPrune extends CommandImpl {
 	public void embeds(CommandEvent event, @Argument(value="amount", nullDefault=true) Integer amount) {
 		int limit = amount == null ? 100 : amount;
 		
-		if (limit > 100) {
+		if(limit > 100) {
 			event.reply("You can only prune up to 100 messages :no_entry:").queue();
+			
 			return;
 		}
 		
-		if (limit < 1) {
+		if(limit < 1) {
 			event.reply("You have to prune at least 1 message :no_entry:").queue();
+			
 			return;
 		}
 		
@@ -195,23 +204,23 @@ public class CommandPrune extends CommandImpl {
 		
 		event.getTextChannel().getHistory().retrievePast(this.pruneLimit).queue(messages -> {
 			ZonedDateTime dateTime = ZonedDateTime.now(ZoneId.of("UTC"));
-			for (Message message : new ArrayList<>(messages)) {
-				if (Duration.between(message.getTimeCreated(), dateTime).toSeconds() > this.pruneAgeLimit) {
+			for(Message message : new ArrayList<>(messages)) {
+				if(Duration.between(message.getTimeCreated(), dateTime).toSeconds() > this.pruneAgeLimit) {
 					messages.remove(message);
-				} else if (message.getEmbeds().isEmpty()) {
+				}else if(message.getEmbeds().isEmpty()) {
 					messages.remove(message);
 				}
 			}
 			
-			if (messages.isEmpty()) {
+			if(messages.isEmpty()) {
 				return;
 			}
 			
 			messages = messages.subList(0, Math.min(limit, messages.size()));
 			
-			if (messages.size() == 1) {
+			if(messages.size() == 1) {
 				messages.get(0).delete().queue();
-			} else {
+			}else{
 				event.getTextChannel().deleteMessages(messages).queue();
 			}
 		});
@@ -223,21 +232,24 @@ public class CommandPrune extends CommandImpl {
 	public void regex(CommandEvent event, @Argument(value="regex") String regexArgument, @Argument(value="amount", nullDefault=true) Integer amount) {
 		int limit = amount == null ? 100 : amount;
 		
-		if (limit > 100) {
+		if(limit > 100) {
 			event.reply("You can only prune up to 100 messages :no_entry:").queue();
+			
 			return;
 		}
 		
-		if (limit < 1) {
+		if(limit < 1) {
 			event.reply("You have to prune at least 1 message :no_entry:").queue();
+			
 			return;
 		}
 		
 		Pattern regex;
 		try {
 			regex = Pattern.compile(regexArgument, Pattern.CASE_INSENSITIVE);
-		} catch(PatternSyntaxException e) {
+		}catch(PatternSyntaxException e) {
 			event.reply("The syntax for the regex you supplied was invalid :no_entry:\n\n" + e.getMessage()).queue();
+			
 			return;
 		}
 		
@@ -245,23 +257,23 @@ public class CommandPrune extends CommandImpl {
 		
 		event.getTextChannel().getHistory().retrievePast(this.pruneLimit).queue(messages -> {
 			ZonedDateTime dateTime = ZonedDateTime.now(ZoneId.of("UTC"));
-			for (Message message : new ArrayList<>(messages)) {
-				if (Duration.between(message.getTimeCreated(), dateTime).toSeconds() > this.pruneAgeLimit) {
+			for(Message message : new ArrayList<>(messages)) {
+				if(Duration.between(message.getTimeCreated(), dateTime).toSeconds() > this.pruneAgeLimit) {
 					messages.remove(message);
-				} else if (!regex.matcher(message.getContentRaw()).matches()) {
+				}else if(!regex.matcher(message.getContentRaw()).matches()) {
 					messages.remove(message);
 				}
 			}
 			
-			if (messages.isEmpty()) {
+			if(messages.isEmpty()) {
 				return;
 			}
 			
 			messages = messages.subList(0, Math.min(limit, messages.size()));
 			
-			if (messages.size() == 1) {
+			if(messages.size() == 1) {
 				messages.get(0).delete().queue();
-			} else {
+			}else{
 				event.getTextChannel().deleteMessages(messages).queue();
 			}
 		});
@@ -273,13 +285,15 @@ public class CommandPrune extends CommandImpl {
 	public void bots(CommandEvent event, @Argument(value="amount", nullDefault=true) Integer amount) {
 		int limit = amount == null ? 100 : amount;
 		
-		if (limit > 100) {
+		if(limit > 100) {
 			event.reply("You can only prune up to 100 messages :no_entry:").queue();
+			
 			return;
 		}
 		
-		if (limit < 1) {
+		if(limit < 1) {
 			event.reply("You have to prune at least 1 message :no_entry:").queue();
+			
 			return;
 		}
 		
@@ -287,23 +301,23 @@ public class CommandPrune extends CommandImpl {
 		
 		event.getTextChannel().getHistory().retrievePast(this.pruneLimit).queue(messages -> {
 			ZonedDateTime dateTime = ZonedDateTime.now(ZoneId.of("UTC"));
-			for (Message message : new ArrayList<>(messages)) {
-				if (Duration.between(message.getTimeCreated(), dateTime).toSeconds() > this.pruneAgeLimit) {
+			for(Message message : new ArrayList<>(messages)) {
+				if(Duration.between(message.getTimeCreated(), dateTime).toSeconds() > this.pruneAgeLimit) {
 					messages.remove(message);
-				} else if (!message.getAuthor().isBot()) {
+				}else if(!message.getAuthor().isBot()) {
 					messages.remove(message);
 				}
 			}
 			
-			if (messages.isEmpty()) {
+			if(messages.isEmpty()) {
 				return;
 			}
 			
 			messages = messages.subList(0, Math.min(limit, messages.size()));
 			
-			if (messages.size() == 1) {
+			if(messages.size() == 1) {
 				messages.get(0).delete().queue();
-			} else {
+			}else{
 				event.getTextChannel().deleteMessages(messages).queue();
 			}
 		});
@@ -312,7 +326,7 @@ public class CommandPrune extends CommandImpl {
 	public void initialize(CommandImpl command) {
 		command.setCategory(Category.PRUNE);
 		
-		for (ICommand subCommand : command.getSubCommands()) {
+		for(ICommand subCommand : command.getSubCommands()) {
 			this.initialize((CommandImpl) subCommand);
 		}
 	}

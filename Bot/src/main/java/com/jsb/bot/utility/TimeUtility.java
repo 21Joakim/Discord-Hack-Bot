@@ -4,6 +4,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 public class TimeUtility {
+	
+	private TimeUtility() {}
 
 	private static final List<String> dayAliases = List.of("day", "d", "days");
 	private static final List<String> hourAliases = List.of("hour", "h", "hours");

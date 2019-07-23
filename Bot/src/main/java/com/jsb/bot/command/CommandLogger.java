@@ -23,6 +23,7 @@ import com.jsb.bot.database.Database;
 import com.jsb.bot.database.callback.Callback;
 import com.jsb.bot.logger.LoggerType;
 import com.jsb.bot.paged.PagedResult;
+import com.jsb.bot.utility.CheckUtility;
 import com.jsb.bot.utility.LoggerUtility;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
@@ -47,11 +48,7 @@ public class CommandLogger extends CommandImpl {
 	@Command(value="add", aliases="create", description="Add a new logger for a channel")
 	public void add(CommandEvent event, @Argument("channel") TextChannel channel) {
 		LoggerUtility.getLoggers(event.getGuild(), (loggers, exception) -> {
-			if(exception != null) {
-				exception.printStackTrace();
-				
-				event.reply("Something went wrong :no_entry:").queue();
-				
+			if(CheckUtility.isExceptional(event, exception)) {
 				return;
 			}
 			
@@ -84,13 +81,11 @@ public class CommandLogger extends CommandImpl {
 					.append("webhookToken", webhook.getToken());
 				
 				Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.push("logger.loggers", logger), (result, exception2) -> {
-					if(exception2 != null) {
-						exception2.printStackTrace();
-						
-						event.reply("Something went wrong :no_entry:").queue();
-					}else{
-						event.reply("Created logger for " + channel.getAsMention() + ", loggers are disabled by default, use the `logger enable` command to enable it").queue();
+					if(CheckUtility.isExceptional(event, exception2)) {
+						return;
 					}
+					
+					event.reply("Created logger for " + channel.getAsMention() + ", loggers are disabled by default, use the `logger enable` command to enable it").queue();
 				});
 			}, exception2 -> {
 				event.reply("Failed to create the webhook :no_entry:").queue();
@@ -115,13 +110,11 @@ public class CommandLogger extends CommandImpl {
 			}
 			
 			Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.pull("logger.loggers", new Document("channelId", channelId)), (data, exception) -> {
-				if(exception != null) {
-					exception.printStackTrace();
-					
-					event.reply("Something went wrong :no_entry:").queue();
-				}else{
-					event.reply("Removed logger for " + this.getTextChannelName(event.getGuild(), channelId) + (!removeWebhook.get() ? ", I was unable to remove the webhook because I am missing the `MANAGE_WEBHOOK` permission!" : "")).queue();
+				if(CheckUtility.isExceptional(event, exception)) {
+					return;
 				}
+				
+				event.reply("Removed logger for " + this.getTextChannelName(event.getGuild(), channelId) + (!removeWebhook.get() ? ", I was unable to remove the webhook because I am missing the `MANAGE_WEBHOOK` permission!" : "")).queue();
 			});
 		});
 	}
@@ -143,57 +136,51 @@ public class CommandLogger extends CommandImpl {
 			UpdateOptions options = new UpdateOptions().arrayFilters(List.of(Filters.eq("logger.channelId", logger.getLong("channelId"))));
 			
 			Database.get().getGuildById(event.getGuild().getIdLong(), null, Projections.include("logger.loggers"), (document, exception) -> {
-				if(exception != null) {
-					exception.printStackTrace();
+				if(CheckUtility.isExceptional(event, exception)) {
+					return;
+				}
+				
+				List<Document> loggers = document.getEmbedded(List.of("logger", "loggers"), Collections.emptyList());
+				if(LoggerUtility.isAnyTypesInUse(loggers, LoggerUtility.getEnabledEvents(logger, true))) {
+					event.reply("You are unable to enable this logger because one or more events are already enabled on another logger :no_entry:").queue();
 					
-					event.reply("Something went wrong :no_entry:").queue();
-				}else{
-					List<Document> loggers = document.getEmbedded(List.of("logger", "loggers"), Collections.emptyList());
-					if(LoggerUtility.isAnyTypesInUse(loggers, LoggerUtility.getEnabledEvents(logger, true))) {
-						event.reply("You are unable to enable this logger because one or more events are already enabled on another logger :no_entry:").queue();
-						
+					return;
+				}
+				
+				Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("logger.loggers.$[logger].enabled", enable), options, (result, exception2) -> {
+					if(CheckUtility.isExceptional(event, exception2)) {
 						return;
 					}
 					
-					Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("logger.loggers.$[logger].enabled", enable), options, (result, exception2) -> {
-						if(exception2 != null) {
-							exception2.printStackTrace();
-							
-							event.reply("Something went wrong :no_entry:").queue();
-						}else{
-							event.reply((enable ? "Enabled" : "Disabled") + " logger for " + this.getTextChannelName(event.getGuild(), logger.getLong("channelId"))).queue();
-						}
-					});
-				}
+					event.reply((enable ? "Enabled" : "Disabled") + " logger for " + this.getTextChannelName(event.getGuild(), logger.getLong("channelId"))).queue();
+				});
 			});
 		}
 	}
 	
 	private void getLoggerPerform(CommandEvent event, TextChannel channel, Consumer<Document> consumer) {
 		Callback<Document> callback = (data, exception) -> {
-			if(exception != null) {
-				exception.printStackTrace();
-				
-				event.reply("Something went wrong :no_entry:").queue();
-			}else{
-				List<Document> loggers = data.getEmbedded(List.of("logger", "loggers"), Collections.emptyList());
-				if(loggers.size() > 0) {
-					if(loggers.size() == 1) {
-						consumer.accept(loggers.get(0));
-					}else{
-						new PagedResult<>(loggers)
-							.setDisplayFunction(logger -> this.getTextChannelName(event.getGuild(), logger.getLong("channelId")))
-							.onSelect(selectEvent -> {
-								consumer.accept(selectEvent.entry);
-							})
-							.send(event);
-					}
+			if(CheckUtility.isExceptional(event, exception)) {
+				return;
+			}
+			
+			List<Document> loggers = data.getEmbedded(List.of("logger", "loggers"), Collections.emptyList());
+			if(loggers.size() > 0) {
+				if(loggers.size() == 1) {
+					consumer.accept(loggers.get(0));
 				}else{
-					if(channel != null) {
-						event.reply("That channel has no logger :no_entry:").queue();
-					}else{
-						event.reply("No loggers are setup for this server").queue();
-					}
+					new PagedResult<>(loggers)
+						.setDisplayFunction(logger -> this.getTextChannelName(event.getGuild(), logger.getLong("channelId")))
+						.onSelect(selectEvent -> {
+							consumer.accept(selectEvent.entry);
+						})
+						.send(event);
+				}
+			}else{
+				if(channel != null) {
+					event.reply("That channel has no logger :no_entry:").queue();
+				}else{
+					event.reply("No loggers are setup for this server").queue();
 				}
 			}
 		};
@@ -325,32 +312,32 @@ public class CommandLogger extends CommandImpl {
 		
 		if(logger.getBoolean("enabled", true)) {
 			LoggerUtility.getLoggers(event.getGuild(), (loggers, exception) -> {
-				if(exception != null) {
-					event.reply("Something went wrong :no_entry:").queue();
-				}else{
-					EnumSet<LoggerType> set = null;
-					if(loggerEvents.size() == 0) {
-						set = EnumSet.allOf(LoggerType.class);
-					}else if(mode) {
-						set = EnumSet.noneOf(LoggerType.class);
-						set.addAll(LoggerUtility.getEvents(loggerEvents));
-					}else if(!mode) {
-						set = EnumSet.allOf(LoggerType.class);
-						set.removeAll(LoggerUtility.getEvents(loggerEvents));
-					}
-					
-					loggers = loggers.stream()
-						.filter(l -> !l.getLong("channelId").equals(logger.getLong("channelId")))
-						.collect(Collectors.toList());
-					
-					if(LoggerUtility.isAnyTypesInUse(loggers, set)) {
-						event.reply("You are unable to enable those events because one or more events are already enabled on another logger :no_entry:").queue();
-						
-						return;
-					}
-					
-					Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.combine(Updates.set("logger.loggers.$[logger].mode", mode), Updates.set("logger.loggers.$[logger].events", loggerEvents)), options, callback);
+				if(CheckUtility.isExceptional(event, exception)) {
+					return;
 				}
+				
+				EnumSet<LoggerType> set = null;
+				if(loggerEvents.size() == 0) {
+					set = EnumSet.allOf(LoggerType.class);
+				}else if(mode) {
+					set = EnumSet.noneOf(LoggerType.class);
+					set.addAll(LoggerUtility.getEvents(loggerEvents));
+				}else if(!mode) {
+					set = EnumSet.allOf(LoggerType.class);
+					set.removeAll(LoggerUtility.getEvents(loggerEvents));
+				}
+				
+				loggers = loggers.stream()
+					.filter(l -> !l.getLong("channelId").equals(logger.getLong("channelId")))
+					.collect(Collectors.toList());
+				
+				if(LoggerUtility.isAnyTypesInUse(loggers, set)) {
+					event.reply("You are unable to enable those events because one or more events are already enabled on another logger :no_entry:").queue();
+					
+					return;
+				}
+				
+				Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.combine(Updates.set("logger.loggers.$[logger].mode", mode), Updates.set("logger.loggers.$[logger].events", loggerEvents)), options, callback);
 			});
 			
 			return;
@@ -455,11 +442,7 @@ public class CommandLogger extends CommandImpl {
 		UpdateOptions options = new UpdateOptions().arrayFilters(List.of(Filters.eq("logger.channelId", logger.getLong("channelId"))));
 		
 		Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.combine(Updates.set("logger.loggers.$[logger].mode", !enable), Updates.set("logger.loggers.$[logger].events", Collections.emptyList())), options, (result, exception) -> {
-			if(exception != null) {
-				exception.printStackTrace();
-				
-				event.reply("Something went wrong :no_entry:").queue();
-				
+			if(CheckUtility.isExceptional(event, exception)) {
 				return;
 			}
 			

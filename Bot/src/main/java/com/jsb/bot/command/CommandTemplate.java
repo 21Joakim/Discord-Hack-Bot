@@ -18,6 +18,7 @@ import com.jockie.bot.core.command.impl.CommandImpl;
 import com.jsb.bot.category.Category;
 import com.jsb.bot.database.Database;
 import com.jsb.bot.paged.PagedResult;
+import com.jsb.bot.utility.CheckUtility;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Updates;
 
@@ -45,11 +46,7 @@ public class CommandTemplate extends CommandImpl {
 		}
 		
 		Database.get().getGuildById(event.getGuild().getIdLong(), null, Projections.include("template.reasons"), (document, exception) -> {
-			if(exception != null) {
-				exception.printStackTrace();
-				
-				event.reply("Something went wrong :no_entry:").queue();
-				
+			if(CheckUtility.isExceptional(event, exception)) {
 				return;
 			}
 			
@@ -67,11 +64,7 @@ public class CommandTemplate extends CommandImpl {
 				.append("createdAt", Clock.systemUTC().instant().getEpochSecond());
 			
 			Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.push("template.reasons", template0), (result, exception2) -> {
-				if(exception2 != null) {
-					exception2.printStackTrace();
-					
-					event.reply("Something went wrong :no_entry:").queue();
-					
+				if(CheckUtility.isExceptional(event, exception2)) {
 					return;
 				}
 				
@@ -84,11 +77,7 @@ public class CommandTemplate extends CommandImpl {
 	@Command(value="remove", description="Remove a template by its name")
 	public void remove(CommandEvent event, @Argument(value="template name", endless=true) String name) {
 		Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.pull("template.reasons", new Document("name", name)), (result, exception) -> {
-			if(exception != null) {
-				exception.printStackTrace();
-				
-				event.reply("Something went wrong :no_entry:").queue();
-				
+			if(CheckUtility.isExceptional(event, exception)) {
 				return;
 			}
 			
@@ -103,11 +92,7 @@ public class CommandTemplate extends CommandImpl {
 	@Command(value="list", description="List all available templates")
 	public void list(CommandEvent event) {
 		Database.get().getGuildById(event.getGuild().getIdLong(), null, Projections.include("template.reasons"), (document, exception) -> {
-			if(exception != null) {
-				exception.printStackTrace();
-				
-				event.reply("Something went wrong :no_entry:").queue();
-				
+			if(CheckUtility.isExceptional(event, exception)) {
 				return;
 			}
 			

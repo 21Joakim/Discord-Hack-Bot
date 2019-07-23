@@ -25,7 +25,7 @@ public class CommandHelp extends CommandImpl {
 	}
 	
 	public void onCommand(CommandEvent event, @Argument(value="command", endless=true, nullDefault=true) String commandArgument) {
-		if (commandArgument == null) {
+		if(commandArgument == null) {
 			new PagedResult<>(Arrays.asList(Category.ALL))
 				.setEntriesPerPage(1)
 				.setListIndexes(false)
@@ -44,47 +44,50 @@ public class CommandHelp extends CommandImpl {
 					return page.toString();
 				})
 				.send(event);
-		} else {
-			ICommand command = ArgumentUtility.getCommand(event.getCommandListener(), commandArgument);
-			if (command == null) {
-				event.reply("I could not find that command :no_entry:").queue();
-				return;
-			}
 			
-			StringBuilder permissions = new StringBuilder();
-			for (int i = 0; i < command.getAuthorDiscordPermissions().size(); i++) {
-				Permission permission = command.getAuthorDiscordPermissions().get(i);
-				permissions.append(permission.getName());
-				
-				if (i != command.getAuthorDiscordPermissions().size() - 1) {
-					permissions.append(", ");
-				}
-			}
-			
-			StringBuilder subCommands = new StringBuilder();
-			for (int i = 0; i < command.getSubCommands().size(); i++) {
-				ICommand subCommand = command.getSubCommands().get(i);
-				subCommands.append(subCommand.getCommand());
-				
-				if (i != command.getSubCommands().size() - 1) {
-					subCommands.append(", ");
-				}
-			}
-		
-			EmbedBuilder embed = new EmbedBuilder();
-			embed.addField("Command", command.getCommandTrigger(), false);
-			embed.addField("Description", command.getDescription(), false);
-			embed.addField("Usage", command.getUsage(event.getPrefix()), false);
-			
-			if (!command.getAuthorDiscordPermissions().isEmpty()) {
-				embed.addField("Required Permissions", permissions.toString(), false);
-			}
-			
-			if (!command.getSubCommands().isEmpty()) {
-				embed.addField("Sub Commands", subCommands.toString(), false);
-			}
-			
-			event.reply(embed.build()).queue();
+			return;
 		}
+		
+		ICommand command = ArgumentUtility.getCommand(event.getCommandListener(), commandArgument);
+		if(command == null) {
+			event.reply("I could not find that command :no_entry:").queue();
+			
+			return;
+		}
+		
+		StringBuilder permissions = new StringBuilder();
+		for(int i = 0; i < command.getAuthorDiscordPermissions().size(); i++) {
+			Permission permission = command.getAuthorDiscordPermissions().get(i);
+			permissions.append(permission.getName());
+			
+			if(i != command.getAuthorDiscordPermissions().size() - 1) {
+				permissions.append(", ");
+			}
+		}
+		
+		StringBuilder subCommands = new StringBuilder();
+		for(int i = 0; i < command.getSubCommands().size(); i++) {
+			ICommand subCommand = command.getSubCommands().get(i);
+			subCommands.append(subCommand.getCommand());
+			
+			if(i != command.getSubCommands().size() - 1) {
+				subCommands.append(", ");
+			}
+		}
+	
+		EmbedBuilder embed = new EmbedBuilder();
+		embed.addField("Command", command.getCommandTrigger(), false);
+		embed.addField("Description", command.getDescription(), false);
+		embed.addField("Usage", command.getUsage(event.getPrefix()), false);
+		
+		if(!command.getAuthorDiscordPermissions().isEmpty()) {
+			embed.addField("Required Permissions", permissions.toString(), false);
+		}
+		
+		if(!command.getSubCommands().isEmpty()) {
+			embed.addField("Sub Commands", subCommands.toString(), false);
+		}
+		
+		event.reply(embed.build()).queue();
 	}
 }

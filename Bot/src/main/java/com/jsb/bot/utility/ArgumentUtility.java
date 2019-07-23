@@ -20,6 +20,8 @@ import net.dv8tion.jda.internal.requests.EmptyRestAction;
 
 public class ArgumentUtility {
 	
+	private ArgumentUtility() {}
+	
 	private static final Pattern idRegex = Pattern.compile("(\\d+)");
 	private static final Pattern tagRegex = Pattern.compile("(.{2,32})#(\\d{4})");
 	

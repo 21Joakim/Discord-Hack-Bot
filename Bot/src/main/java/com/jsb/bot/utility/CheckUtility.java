@@ -15,6 +15,28 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Role;
 
 public class CheckUtility {
+	
+	private CheckUtility() {}
+	
+	public static boolean isExceptional(CommandEvent event, Throwable throwable) {
+		if(CheckUtility.isExceptional(throwable)) {
+			event.reply("Something went wrong :no_entry:").queue();
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public static boolean isExceptional(Throwable throwable) {
+		if(throwable != null) {
+			throwable.printStackTrace();
+			
+			return true;
+		}
+		
+		return false;
+	}
 
 	public static boolean checkPermissions(CommandEvent event) {
 		if (event.isAuthorDeveloper() || event.getGuild().getOwner().equals(event.getMember()) || event.getMember().hasPermission(Permission.ADMINISTRATOR)) {

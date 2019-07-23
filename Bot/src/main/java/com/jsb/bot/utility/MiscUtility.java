@@ -6,6 +6,8 @@ import club.minnced.discord.webhook.send.WebhookEmbed;
 import club.minnced.discord.webhook.send.WebhookEmbed.EmbedField;
 
 public class MiscUtility {
+	
+	private MiscUtility() {}
 
 	public static <Type> String join(Collection<Type> list, String joinBy) {
 		StringBuilder string = new StringBuilder();

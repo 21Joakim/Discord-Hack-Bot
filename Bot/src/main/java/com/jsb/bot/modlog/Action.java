@@ -10,6 +10,7 @@ public enum Action {
 	VOICE_KICK("Voice Kick", false);
 	
 	private String name;
+	
 	private boolean warnAction;
 	
 	private Action(String name, boolean warnAction) {

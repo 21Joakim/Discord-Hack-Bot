@@ -28,6 +28,7 @@ import com.jsb.bot.modlog.ModlogListener;
 import com.jsb.bot.mute.MuteListener;
 import com.jsb.bot.paged.PagedResult;
 import com.jsb.bot.utility.ArgumentUtility;
+import com.jsb.bot.utility.CheckUtility;
 import com.jsb.bot.utility.TimeUtility;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
@@ -136,9 +137,7 @@ public class ModuleWarn {
 			case MUTE: {
 				if(guild.getSelfMember().hasPermission(Permission.MANAGE_ROLES)) {
 					MuteListener.getOrCreateMuteRole(guild, (muteRole, exception) -> {
-						if(exception != null) {
-							exception.printStackTrace();
-							
+						if(CheckUtility.isExceptional(exception)) {
 							callback.onResult(null, new IllegalStateException("Something went wrong"));
 							
 							return;
@@ -147,34 +146,29 @@ public class ModuleWarn {
 						if(guild.getSelfMember().canInteract(muteRole)) {
 							guild.addRoleToMember(member, muteRole).queue($ -> {
 								Database.get().getGuildById(guild.getIdLong(), null, Projections.include("mute.users"), (data, readException) -> {
-									if (readException != null) {
-										readException.printStackTrace();
-										
+									if(CheckUtility.isExceptional(readException)) {
 										callback.onResult(null, new IllegalStateException("Something went wrong"));
-									} else {
-										List<Document> users = data.getEmbedded(List.of("mute", "users"), new ArrayList<>());
-										for(Document user : users) {
-											if(user.getLong("id") == member.getIdLong()) {
-												users.remove(user);
-												break;
-											}
+										
+										return;
+									}
+									
+									List<Document> users = data.getEmbedded(List.of("mute", "users"), new ArrayList<>());
+									users.removeIf(user -> user.getLong("id") == member.getIdLong());
+									
+									users.add(new Document()
+										.append("id", member.getIdLong())
+										.append("duration", null)
+										.append("time", Clock.systemUTC().instant().getEpochSecond()));
+									
+									Database.get().updateGuildById(guild.getIdLong(), Updates.set("mute.users", users), (result, writeException) -> {
+										if(CheckUtility.isExceptional(writeException)) {
+											callback.onResult(null, new IllegalStateException("Something went wrong"));
+											
+											return;
 										}
 										
-										users.add(new Document()
-											.append("id", member.getIdLong())
-											.append("duration", null)
-											.append("time", Clock.systemUTC().instant().getEpochSecond()));
-										
-										Database.get().updateGuildById(guild.getIdLong(), Updates.set("mute.users", users), (result, writeException) -> {
-											if(writeException != null) {
-												writeException.printStackTrace();
-												
-												callback.onResult(null, new IllegalStateException("Something went wrong"));
-											}else{
-												callback.onResult(null, null);
-											}
-										});
-									}
+										callback.onResult(null, null);
+									});
 								});
 							}, reason -> {
 								callback.onResult(null, reason);
@@ -289,11 +283,7 @@ public class ModuleWarn {
 			}
 			
 			ModuleWarn.doWarn(event.getGuild(), event.getAuthor(), member.getUser(), reason, worth, (warning, exception) -> {
-				if(exception != null) {
-					exception.printStackTrace();
-					
-					event.reply("Something went wrong :no_entry:").queue();
-					
+				if(CheckUtility.isExceptional(event, exception)) {
 					return;
 				}
 				
@@ -320,22 +310,14 @@ public class ModuleWarn {
 		@Command(value="action reapply toggle", description="Toggle whether or not actions should re-apply if the user gets another warning")
 		public void actionReapply(CommandEvent event) {
 			Database.get().getGuildById(event.getGuild().getIdLong(), null, Projections.include("warning.reapply"), (data, exception) -> {
-				if(exception != null) {
-					exception.printStackTrace();
-					
-					event.reply("Something went wrong :no_entry:").queue();
-					
+				if(CheckUtility.isExceptional(event, exception)) {
 					return;
 				}
 				
 				boolean current = data.getEmbedded(List.of("warning", "reapply"), false);
 				
 				Database.get().updateGuildById(event.getGuild().getIdLong(), Updates.set("warning.reapply", !current), (result, exception2) -> {
-					if(exception2 != null) {
-						exception2.printStackTrace();
-						
-						event.reply("Something went wrong :no_entry:").queue();
-						
+					if(CheckUtility.isExceptional(event, exception2)) {
 						return;
 					}
 					
@@ -368,11 +350,7 @@ public class ModuleWarn {
 			}
 			
 			Database.get().getGuildById(event.getGuild().getIdLong(), null, Projections.include("warning.actions"), (document, exception) -> {
-				if(exception != null) {
-					exception.printStackTrace();
-					
-					event.reply("Something went wrong :no_entry:").queue();
-					
+				if(CheckUtility.isExceptional(event, exception)) {
 					return;
 				}
 				
@@ -399,11 +377,7 @@ public class ModuleWarn {
 				}
 				
 				Callback<UpdateResult> callback = (result, exception2) -> {
-					if(exception2 != null) {
-						exception2.printStackTrace();
-						
-						event.reply("Something went wrong :no_entry:").queue();
-						
+					if(CheckUtility.isExceptional(event, exception2)) {
 						return;
 					}
 					
@@ -423,11 +397,7 @@ public class ModuleWarn {
 	
 	private void showUserWarnings(CommandEvent event, Member member) {
 		Database.get().getWarnings(event.getGuild().getIdLong(), member.getIdLong(), (warnings, exception) -> {
-			if(exception != null) {
-				exception.printStackTrace();
-				
-				event.reply("Something went wrong :no_entry:").queue();
-				
+			if(CheckUtility.isExceptional(event, exception)) {
 				return;
 			}
 			
@@ -482,11 +452,7 @@ public class ModuleWarn {
 			this.showUserWarnings(event, member);
 		}else{
 			Database.get().getWarnings(event.getGuild().getIdLong(), (warnings, exception) -> {
-				if(exception != null) {
-					exception.printStackTrace();
-					
-					event.reply("Something went wrong :no_entry:").queue();
-					
+				if(CheckUtility.isExceptional(event, exception)) {
 					return;
 				}
 				
