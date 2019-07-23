@@ -30,17 +30,17 @@ public class ArgumentUtility {
 			Matcher idMatch = ArgumentUtility.idRegex.matcher(argument);
 			Matcher mentionMatch = MentionType.CHANNEL.getPattern().matcher(argument);
 			
-			if (idMatch.matches()) {
+			if(idMatch.matches()) {
 				return guild.getTextChannelById(idMatch.group(1));
-			} else if (mentionMatch.matches()) {
+			}else if(mentionMatch.matches()) {
 				return guild.getTextChannelById(mentionMatch.group(1));
-			} else {
+			}else{
 				List<TextChannel> textChannels = guild.getTextChannelsByName(argument, true);
 				if (!textChannels.isEmpty()) {
 					return textChannels.get(0);
 				}
 			}
-		} catch(NumberFormatException e) {}
+		}catch(NumberFormatException e) {}
 		
 		return null;
 	}
@@ -50,17 +50,17 @@ public class ArgumentUtility {
 			Matcher idMatch = ArgumentUtility.idRegex.matcher(argument);
 			Matcher mentionMatch = MentionType.ROLE.getPattern().matcher(argument);
 			
-			if (idMatch.matches()) {
+			if(idMatch.matches()) {
 				return guild.getRoleById(idMatch.group(1));
-			} else if (mentionMatch.matches()) {
+			}else if(mentionMatch.matches()) {
 				return guild.getRoleById(mentionMatch.group(1));
-			} else {
+			}else{
 				List<Role> roles = guild.getRolesByName(argument, true);
-				if (!roles.isEmpty()) {
+				if(!roles.isEmpty()) {
 					return roles.get(0);
 				}
 			}
-		} catch(NumberFormatException e) {}
+		}catch(NumberFormatException e) {}
 		
 		return null;
 	}
@@ -71,31 +71,31 @@ public class ArgumentUtility {
 			Matcher mentionMatch = MentionType.USER.getPattern().matcher(argument);
 			Matcher tagMatch = ArgumentUtility.tagRegex.matcher(argument);
 			
-			if (idMatch.matches()) {
+			if(idMatch.matches()) {
 				return guild.getMemberById(idMatch.group(1));
-			} else if (mentionMatch.matches()) {
+			}else if(mentionMatch.matches()) {
 				return guild.getMemberById(mentionMatch.group(1));
-			} else if (tagMatch.matches()) {
+			}else if(tagMatch.matches()) {
 				String name = tagMatch.group(1).toLowerCase();
 				String discriminator = tagMatch.group(2);
 				
-				for (Member member : guild.getMembers()) {
-					if (member.getUser().getName().toLowerCase().equals(name) && member.getUser().getDiscriminator().equals(discriminator)) {
+				for(Member member : guild.getMembers()) {
+					if(member.getUser().getName().toLowerCase().equals(name) && member.getUser().getDiscriminator().equals(discriminator)) {
 						return member;
 					}
 				}
-			} else {
+			}else{
 				List<Member> effectiveNameMembers = guild.getMembersByEffectiveName(argument, true);
-				if (effectiveNameMembers.isEmpty()) {
+				if(effectiveNameMembers.isEmpty()) {
 					List<Member> nameMembers = guild.getMembersByName(argument, true);
-					if (!nameMembers.isEmpty()) {
+					if(!nameMembers.isEmpty()) {
 						return nameMembers.get(0);
 					}
-				} else {
+				}else{
 					return effectiveNameMembers.get(0);
 				}
 			}
-		} catch(NumberFormatException e) {}
+		}catch(NumberFormatException e) {}
 		
 		return null;
 	}
@@ -106,29 +106,29 @@ public class ArgumentUtility {
 			Matcher mentionMatch = MentionType.USER.getPattern().matcher(argument);
 			Matcher tagMatch = ArgumentUtility.tagRegex.matcher(argument);
 			
-			if (idMatch.matches()) {
+			if(idMatch.matches()) {
 				return shardManager.getUserById(idMatch.group(1));
-			} else if (mentionMatch.matches()) {
+			}else if(mentionMatch.matches()) {
 				return shardManager.getUserById(mentionMatch.group(1));
-			} else if (tagMatch.matches()) {
+			}else if(tagMatch.matches()) {
 				String name = tagMatch.group(1).toLowerCase();
 				String discriminator = tagMatch.group(2);
 				
-				for (User user : shardManager.getUsers()) {
-					if (user.getName().toLowerCase().equals(name) && user.getDiscriminator().equals(discriminator)) {
+				for(User user : shardManager.getUsers()) {
+					if(user.getName().toLowerCase().equals(name) && user.getDiscriminator().equals(discriminator)) {
 						return user;
 					}
 				}
-			} else {
+			}else{
 				argument = argument.toLowerCase();
 				
-				for (User user : shardManager.getUsers()) {
-					if (user.getName().toLowerCase().equals(argument)) {
+				for(User user : shardManager.getUsers()) {
+					if(user.getName().toLowerCase().equals(argument)) {
 						return user;
 					}
 				}
 			}
-		} catch(NumberFormatException e) {}
+		}catch(NumberFormatException e) {}
 		
 		return null;
 	}
@@ -138,12 +138,12 @@ public class ArgumentUtility {
 			Matcher idMatch = ArgumentUtility.idRegex.matcher(argument);
 			Matcher mentionMatch = MentionType.USER.getPattern().matcher(argument);
 			
-			if (idMatch.matches()) {
+			if(idMatch.matches()) {
 				return shardManager.retrieveUserById(idMatch.group(1));
-			} else if (mentionMatch.matches()) {
+			}else if (mentionMatch.matches()) {
 				return shardManager.retrieveUserById(mentionMatch.group(1));
 			}
-		} catch(NumberFormatException e) {}
+		}catch(NumberFormatException e) {}
 		
 		return new EmptyRestAction<User>(shardManager.getShardCache().getElementById(0), null);
 	}
@@ -151,27 +151,27 @@ public class ArgumentUtility {
 	public static ICommand getCommand(CommandListener commandListener, String argument) {
 		argument = argument.toLowerCase();
 		
-		for (ICommand command : commandListener.getAllCommands()) {
+		for(ICommand command : commandListener.getAllCommands()) {
 			ICommand parent = command;
 			
 			List<String> allAliases = new ArrayList<>(parent.getAliases());
 			allAliases.add(parent.getCommand());
 			
-			while (parent.hasParent()) {
+			while(parent.hasParent()) {
 				parent = parent.getParent();
 				
 				List<String> commandAliases = new ArrayList<>(parent.getAliases());
 				commandAliases.add(parent.getCommand());
 				
-				for (String commandAlias : new ArrayList<>(allAliases)) {
-					for (String alias : commandAliases) {
+				for(String commandAlias : new ArrayList<>(allAliases)) {
+					for(String alias : commandAliases) {
 						allAliases.remove(commandAlias);
 						allAliases.add(alias + " " + commandAlias);
 					}
 				}
 			}
 			
-			for (String alias : allAliases) {
+			for(String alias : allAliases) {
 				if (alias.equals(argument)) {
 					return command;
 				}

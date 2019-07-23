@@ -14,15 +14,15 @@ public class TimeUtility {
 	
 	private static long getCorrectSeconds(long number, String suffix) {
 		long seconds = 0L;
-		if (dayAliases.contains(suffix)) {
+		if(TimeUtility.dayAliases.contains(suffix)) {
 			seconds += number * 86400;
-		} else if (hourAliases.contains(suffix)) {
+		}else if(TimeUtility.hourAliases.contains(suffix)) {
 			seconds += number * 3600;
-		} else if (minuteAliases.contains(suffix)) {
+		}else if(TimeUtility.minuteAliases.contains(suffix)) {
 			seconds += number * 60;
-		} else if (secondAliases.contains(suffix)) {
+		}else if(TimeUtility.secondAliases.contains(suffix)) {
 			seconds += number;
-		} else {
+		}else{
 			throw new IllegalArgumentException("Incorrect time format, a good example would be `1d 5h 20m 36s`");
 		}
 		
@@ -33,29 +33,30 @@ public class TimeUtility {
 		String[] timeSplit = time.split(" ");
 		Long lastNumber = null;
 		long seconds = 0L;
-		for (String word : timeSplit) {
-			if (MiscUtility.isNumber(word)) {
-				if (lastNumber == null) {
+		
+		for(String word : timeSplit) {
+			if(MiscUtility.isNumber(word)) {
+				if(lastNumber == null) {
 					lastNumber = Long.parseLong(word);
-				} else {
+				}else{
 					throw new IllegalArgumentException("Incorrect time format, a good example would be `1d 5h 20m 36s`");
 				}
-			} else if (MiscUtility.isWord(word)) {
+			}else if(MiscUtility.isWord(word)) {
 				word = word.toLowerCase();
 				
-				if (lastNumber == null) {
+				if(lastNumber == null) {
 					throw new IllegalArgumentException("Incorrect time format, a good example would be `1d 5h 20m 36s`");
-				} else {
+				}else{
 					seconds += TimeUtility.getCorrectSeconds(lastNumber, word);
 					
 					lastNumber = null;
 				}
-			} else {
+			}else{
 				word = word.toLowerCase();
 				char[] characters = word.toCharArray();
 				
 				int index = 0;
-				for (int i = 0; i < characters.length; i++) {
+				for(int i = 0; i < characters.length; i++) {
 					char character = characters[i];
 					if (!Character.isDigit(character)) {
 						index = i;
@@ -64,9 +65,9 @@ public class TimeUtility {
 					}
 				}
 				
-				if (index == 0) {
+				if(index == 0) {
 					throw new IllegalArgumentException("Incorrect time format, a good example would be `1d 5h 20m 36s`");
-				} else {
+				}else{
 					long number = Long.parseLong(word.substring(0, index));
 					
 					seconds += TimeUtility.getCorrectSeconds(number, word.substring(index));
@@ -74,7 +75,7 @@ public class TimeUtility {
 			}
 		}
 		
-		if (seconds <= 0) {
+		if(seconds <= 0) {
 			throw new IllegalArgumentException("Your time cannot be negative");
 		}
 		
@@ -84,21 +85,22 @@ public class TimeUtility {
 	public static String secondsToTimeString(long time) {
 		ChronoUnit[] units = {ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.WEEKS, ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS};
 		StringBuilder timeString = new StringBuilder();
-		if (time > 0) {
-			for (int i = 0; i < units.length; i++) {
+		
+		if(time > 0) {
+			for(int i = 0; i < units.length; i++) {
 				ChronoUnit unit = units[i];
 				
 				long value = time / unit.getDuration().toSeconds();
 				time = time % unit.getDuration().toSeconds();
 				
-				if (value > 0) {
+				if(value > 0) {
 					String name = unit.toString().toLowerCase();
 					timeString.append(value + " " + name.substring(0, (value == 1 ? name.length() - 1 : name.length())) + " ");
 				}
 			}
 			
 			return timeString.toString().trim();
-		} else {
+		}else{
 			return time + " " + units[units.length - 1].toString().toLowerCase();
 		}
 	}
