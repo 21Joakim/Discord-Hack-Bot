@@ -1,4 +1,4 @@
-let URI = 'https://moderation.jockie.tk/'
+let URI = ''
 let TOKEN = localStorage.getItem('token'); 
 let USER = ''
 

@@ -4,10 +4,12 @@ A Discord moderation bot made for the Discord Hack Week 2019
 ## Invite
 The prefix for this bot is `?`
 
-https://discordapp.com/oauth2/authorize?scope=bot&permissions=8&client_id=592768736315047946
+~~https://discordapp.com/oauth2/authorize?scope=bot&permissions=8&client_id=592768736315047946~~
+The bot still exists if you really wanted to invite it but it has been offline basically since the hack week concluded
 
 ## Website
-https://moderation.jockie.tk
+~~https://moderation.jockie.tk~~
+The website has also been offline for an equally as long time and I don't even have the domain anymore
 
 # Bot
 
@@ -56,3 +58,8 @@ https://moderation.jockie.tk
 
 * Java 9
 * MongoDB
+
+## Credits
+[Bumbleboss](https://github.com/Bumbleboss) - Website
+[Shea](https://github.com/Shea4) - Bot
+[Joakim](https://github.com/21Joakim) - Bot
